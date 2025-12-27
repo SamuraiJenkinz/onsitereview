@@ -123,6 +123,12 @@ def render_upload_section() -> None:
             )
             update_state(api_base_url=api_base_url)
 
+    # Test Connection button
+    st.divider()
+    test_disabled = not api_key
+    if st.button("🔌 Test Connection", disabled=test_disabled, use_container_width=True):
+        _test_llm_connection(state)
+
     # Process button
     st.divider()
     col1, col2 = st.columns(2)
@@ -149,6 +155,54 @@ def render_upload_section() -> None:
         st.info("👆 Upload a JSON file to get started")
     elif not api_key:
         st.warning("⚠️ Enter your API key to enable evaluation")
+
+
+def _test_llm_connection(state) -> None:
+    """Test the LLM API connection."""
+    from tqrs.llm.client import OpenAIClient
+
+    with st.spinner("Testing connection..."):
+        try:
+            if state.use_azure:
+                client = OpenAIClient(
+                    api_key=state.api_key,
+                    use_azure=True,
+                    azure_endpoint=state.azure_endpoint,
+                    azure_deployment=state.azure_deployment,
+                    azure_api_version=state.azure_api_version,
+                    timeout=15,
+                    max_retries=1,
+                )
+            else:
+                client = OpenAIClient(
+                    api_key=state.api_key,
+                    base_url=state.api_base_url or None,
+                    model="gpt-4o",
+                    timeout=15,
+                    max_retries=1,
+                )
+
+            # Send a simple test message
+            response = client.complete(
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": "Say 'Connection successful!' in exactly those words."},
+                ],
+                response_format={"type": "json_object"},
+            )
+
+            st.success(f"✅ Connection successful! API is responding.")
+
+        except Exception as e:
+            error_msg = str(e)
+            if "401" in error_msg:
+                st.error("❌ Authentication failed. Check your API key.")
+            elif "429" in error_msg:
+                st.warning("⚠️ Connection works but rate limited. Wait a moment and try again.")
+            elif "timeout" in error_msg.lower():
+                st.error("❌ Connection timed out. Check your endpoint URL.")
+            else:
+                st.error(f"❌ Connection failed: {error_msg[:200]}")
 
 
 def _handle_file_upload(uploaded_file: BytesIO) -> None:
