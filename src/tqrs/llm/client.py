@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+import httpx
 from openai import APIConnectionError, APIError, AzureOpenAI, OpenAI, RateLimitError
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,8 @@ class ClientConfig:
     azure_endpoint: str | None = None
     azure_deployment: str | None = None
     azure_api_version: str = "2023-05-15"
+    # Corporate proxy settings (custom header auth)
+    use_api_key_header: bool = False  # Use X-Api-Key header instead of Bearer
 
 
 class OpenAIClient:
@@ -132,17 +135,48 @@ class OpenAIClient:
 
         # Initialize appropriate client
         if use_azure:
-            logger.info(f"Using Azure OpenAI: endpoint={azure_endpoint}, deployment={azure_deployment}")
-            self._client = AzureOpenAI(
-                api_key=api_key,
-                azure_endpoint=azure_endpoint,
-                azure_deployment=azure_deployment,
-                api_version=azure_api_version,
-                timeout=timeout,
-            )
-            # For Azure, use deployment name as model
-            if azure_deployment:
-                self.config.model = azure_deployment
+            # Check if this is a corporate proxy (endpoint includes /deployments/)
+            is_corporate_proxy = azure_endpoint and "/deployments/" in azure_endpoint
+
+            if is_corporate_proxy:
+                # Corporate proxy - use standard OpenAI client with custom headers
+                logger.info(f"Using Corporate Azure Proxy: endpoint={azure_endpoint}")
+
+                # Create custom HTTP client with X-Api-Key header
+                custom_headers = {"X-Api-Key": api_key, "api-key": api_key}
+                http_client = httpx.Client(
+                    headers=custom_headers,
+                    timeout=timeout,
+                )
+
+                # Use the endpoint directly as base_url (it already has the full path)
+                # Remove /chat/completions if present since OpenAI client adds it
+                clean_endpoint = azure_endpoint.rstrip("/")
+                if clean_endpoint.endswith("/chat/completions"):
+                    clean_endpoint = clean_endpoint[:-len("/chat/completions")]
+
+                self._client = OpenAI(
+                    api_key=api_key,  # Still needed but headers override
+                    base_url=clean_endpoint,
+                    http_client=http_client,
+                    timeout=timeout,
+                )
+                # Use deployment name as model if provided
+                if azure_deployment:
+                    self.config.model = azure_deployment
+            else:
+                # Standard Azure OpenAI
+                logger.info(f"Using Azure OpenAI: endpoint={azure_endpoint}, deployment={azure_deployment}")
+                self._client = AzureOpenAI(
+                    api_key=api_key,
+                    azure_endpoint=azure_endpoint,
+                    azure_deployment=azure_deployment,
+                    api_version=azure_api_version,
+                    timeout=timeout,
+                )
+                # For Azure, use deployment name as model
+                if azure_deployment:
+                    self.config.model = azure_deployment
         else:
             # Standard OpenAI client
             client_kwargs: dict[str, Any] = {
