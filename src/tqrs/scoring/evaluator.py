@@ -52,6 +52,10 @@ class TicketEvaluator:
         max_tokens: int = 2000,
         timeout: int = 30,
         max_retries: int = 3,
+        use_azure: bool = False,
+        azure_endpoint: str | None = None,
+        azure_deployment: str | None = None,
+        azure_api_version: str = "2023-05-15",
     ) -> "TicketEvaluator":
         """Create a fully configured ticket evaluator.
 
@@ -63,6 +67,10 @@ class TicketEvaluator:
             max_tokens: Maximum tokens per response
             timeout: Request timeout in seconds
             max_retries: Maximum retry attempts
+            use_azure: Whether to use Azure OpenAI
+            azure_endpoint: Azure OpenAI endpoint
+            azure_deployment: Azure deployment name
+            azure_api_version: Azure API version
 
         Returns:
             Configured TicketEvaluator instance
@@ -75,6 +83,10 @@ class TicketEvaluator:
             max_tokens=max_tokens,
             timeout=timeout,
             max_retries=max_retries,
+            use_azure=use_azure,
+            azure_endpoint=azure_endpoint,
+            azure_deployment=azure_deployment,
+            azure_api_version=azure_api_version,
         )
         llm_evaluator = LLMEvaluator(client)
 

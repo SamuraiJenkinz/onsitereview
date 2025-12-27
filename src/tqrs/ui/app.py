@@ -299,13 +299,23 @@ def run_evaluation() -> None:
     metrics_container = st.empty()
 
     try:
-        # Create evaluator
-        evaluator = TicketEvaluator.create(
-            api_key=state.api_key,
-            base_url=state.api_base_url or None,
-            model="gpt-4o",
-            temperature=0.1,
-        )
+        # Create evaluator with appropriate settings
+        if state.use_azure:
+            evaluator = TicketEvaluator.create(
+                api_key=state.api_key,
+                use_azure=True,
+                azure_endpoint=state.azure_endpoint,
+                azure_deployment=state.azure_deployment,
+                azure_api_version=state.azure_api_version,
+                temperature=0.1,
+            )
+        else:
+            evaluator = TicketEvaluator.create(
+                api_key=state.api_key,
+                base_url=state.api_base_url or None,
+                model="gpt-4o",
+                temperature=0.1,
+            )
         batch_evaluator = BatchTicketEvaluator(evaluator)
 
         # Progress callback

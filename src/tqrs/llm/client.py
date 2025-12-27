@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from openai import APIConnectionError, APIError, OpenAI, RateLimitError
+from openai import APIConnectionError, APIError, AzureOpenAI, OpenAI, RateLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,11 @@ class ClientConfig:
     timeout: int = 30
     max_retries: int = 3
     retry_delays: tuple[float, ...] = field(default_factory=lambda: (1.0, 2.0, 4.0))
+    # Azure OpenAI settings
+    use_azure: bool = False
+    azure_endpoint: str | None = None
+    azure_deployment: str | None = None
+    azure_api_version: str = "2023-05-15"
 
 
 class OpenAIClient:
@@ -91,6 +96,10 @@ class OpenAIClient:
         max_tokens: int = 2000,
         timeout: int = 30,
         max_retries: int = 3,
+        use_azure: bool = False,
+        azure_endpoint: str | None = None,
+        azure_deployment: str | None = None,
+        azure_api_version: str = "2023-05-15",
     ):
         """Initialize the OpenAI client.
 
@@ -102,6 +111,10 @@ class OpenAIClient:
             max_tokens: Maximum tokens in response
             timeout: Request timeout in seconds
             max_retries: Maximum retry attempts
+            use_azure: Whether to use Azure OpenAI
+            azure_endpoint: Azure OpenAI endpoint (e.g., https://xxx.openai.azure.com/)
+            azure_deployment: Azure deployment name
+            azure_api_version: Azure API version
         """
         self.config = ClientConfig(
             api_key=api_key,
@@ -111,17 +124,35 @@ class OpenAIClient:
             max_tokens=max_tokens,
             timeout=timeout,
             max_retries=max_retries,
+            use_azure=use_azure,
+            azure_endpoint=azure_endpoint,
+            azure_deployment=azure_deployment,
+            azure_api_version=azure_api_version,
         )
 
-        # Initialize OpenAI client
-        client_kwargs: dict[str, Any] = {
-            "api_key": api_key,
-            "timeout": timeout,
-        }
-        if base_url:
-            client_kwargs["base_url"] = base_url
+        # Initialize appropriate client
+        if use_azure:
+            logger.info(f"Using Azure OpenAI: endpoint={azure_endpoint}, deployment={azure_deployment}")
+            self._client = AzureOpenAI(
+                api_key=api_key,
+                azure_endpoint=azure_endpoint,
+                azure_deployment=azure_deployment,
+                api_version=azure_api_version,
+                timeout=timeout,
+            )
+            # For Azure, use deployment name as model
+            if azure_deployment:
+                self.config.model = azure_deployment
+        else:
+            # Standard OpenAI client
+            client_kwargs: dict[str, Any] = {
+                "api_key": api_key,
+                "timeout": timeout,
+            }
+            if base_url:
+                client_kwargs["base_url"] = base_url
+            self._client = OpenAI(**client_kwargs)
 
-        self._client = OpenAI(**client_kwargs)
         self.token_usage = TokenUsage()
 
     def complete(

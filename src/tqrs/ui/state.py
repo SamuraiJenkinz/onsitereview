@@ -28,6 +28,11 @@ class AppState:
     template: TemplateType = TemplateType.INCIDENT_LOGGING
     api_key: str = ""
     api_base_url: str = ""  # For OpenAI Enterprise endpoints
+    # Azure OpenAI settings
+    use_azure: bool = False
+    azure_endpoint: str = ""
+    azure_deployment: str = ""
+    azure_api_version: str = "2023-05-15"
 
     # Processing state
     is_processing: bool = False
