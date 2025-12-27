@@ -8,7 +8,7 @@ import streamlit as st
 from tqrs.models.evaluation import TemplateType
 from tqrs.models.ticket import ServiceNowTicket
 from tqrs.parser.servicenow import ServiceNowParser
-from tqrs.ui.state import get_state, has_data, reset_state, set_error, update_state
+from tqrs.ui.state import get_state, has_data, reset_state, set_error, set_success, update_state
 
 
 def render_upload_section() -> None:
@@ -22,8 +22,14 @@ def render_upload_section() -> None:
         help="Upload a JSON file exported from ServiceNow containing ticket records",
     )
 
+    # Only process if it's a new file (not already loaded)
     if uploaded_file is not None:
-        _handle_file_upload(uploaded_file)
+        # Check if this is a new file by comparing name
+        current_file = st.session_state.get("_uploaded_file_name")
+        if current_file != uploaded_file.name:
+            # Mark as processed BEFORE handling to prevent rerun loop
+            st.session_state["_uploaded_file_name"] = uploaded_file.name
+            _handle_file_upload(uploaded_file)
 
     # Show ticket count if loaded
     state = get_state()
@@ -88,6 +94,7 @@ def render_upload_section() -> None:
     with col2:
         if st.button("🔄 Reset", use_container_width=True):
             reset_state()
+            st.session_state.pop("_uploaded_file_name", None)
             st.rerun()
 
     # Help text
@@ -99,29 +106,31 @@ def render_upload_section() -> None:
 
 def _handle_file_upload(uploaded_file: BytesIO) -> None:
     """Handle uploaded file parsing."""
-    try:
-        # Read and parse JSON
-        content = uploaded_file.read().decode("utf-8")
-        data = json.loads(content)
+    with st.spinner("Parsing tickets..."):
+        try:
+            # Read and parse JSON
+            content = uploaded_file.read().decode("utf-8")
+            data = json.loads(content)
 
-        # Validate structure
-        is_valid, error_msg = validate_json_structure(data)
-        if not is_valid:
-            set_error(f"Invalid file format: {error_msg}")
-            return
+            # Validate structure
+            is_valid, error_msg = validate_json_structure(data)
+            if not is_valid:
+                set_error(f"Invalid file format: {error_msg}")
+                return
 
-        # Parse tickets
-        tickets = parse_tickets(data)
-        if not tickets:
-            set_error("No valid tickets found in file")
-            return
+            # Parse tickets
+            tickets = parse_tickets(data)
+            if not tickets:
+                set_error("No valid tickets found in file")
+                return
 
-        update_state(tickets=tickets, results=None, summary=None)
+            update_state(tickets=tickets, results=None, summary=None)
+            set_success(f"Loaded {len(tickets)} tickets")
 
-    except json.JSONDecodeError as e:
-        set_error(f"Invalid JSON: {e}")
-    except Exception as e:
-        set_error(f"Error processing file: {e}")
+        except json.JSONDecodeError as e:
+            set_error(f"Invalid JSON: {e}")
+        except Exception as e:
+            set_error(f"Error processing file: {e}")
 
 
 def validate_json_structure(data: dict) -> tuple[bool, str]:
@@ -173,25 +182,19 @@ def parse_tickets(data: dict | list) -> list[ServiceNowTicket]:
     """
     parser = ServiceNowParser()
 
-    # Handle different formats
+    # Handle different formats - wrap in dict with 'records' key if needed
     if isinstance(data, dict):
-        if "records" in data:
-            records = data["records"]
-        elif "result" in data:
-            records = data["result"]
+        if "records" in data or "result" in data:
+            # Already in expected format
+            pass
         else:
-            # Single record
-            records = [data]
-    else:
-        records = data
+            # Single record - wrap it
+            data = {"records": [data]}
+    elif isinstance(data, list):
+        # List of records - wrap it
+        data = {"records": data}
 
-    tickets = []
-    for record in records:
-        try:
-            ticket = parser.parse_ticket(record)
-            tickets.append(ticket)
-        except Exception:
-            # Skip invalid records
-            continue
-
-    return tickets
+    try:
+        return parser.parse_json(data)
+    except Exception:
+        return []
