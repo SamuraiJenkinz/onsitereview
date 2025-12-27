@@ -60,6 +60,16 @@ def render_upload_section() -> None:
     )
     update_state(api_key=api_key)
 
+    # Enterprise endpoint (optional)
+    with st.expander("Enterprise Settings", expanded=bool(state.api_base_url)):
+        api_base_url = st.text_input(
+            "API Base URL (optional)",
+            value=state.api_base_url,
+            placeholder="https://your-endpoint.openai.azure.com/",
+            help="For OpenAI Enterprise or Azure OpenAI endpoints. Leave empty for standard OpenAI API.",
+        )
+        update_state(api_base_url=api_base_url)
+
     # Process button
     st.divider()
     col1, col2 = st.columns(2)

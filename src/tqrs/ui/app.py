@@ -302,6 +302,7 @@ def run_evaluation() -> None:
         # Create evaluator
         evaluator = TicketEvaluator.create(
             api_key=state.api_key,
+            base_url=state.api_base_url or None,
             model="gpt-4o",
             temperature=0.1,
         )

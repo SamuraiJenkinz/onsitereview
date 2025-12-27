@@ -27,6 +27,7 @@ class AppState:
     # Configuration
     template: TemplateType = TemplateType.INCIDENT_LOGGING
     api_key: str = ""
+    api_base_url: str = ""  # For OpenAI Enterprise endpoints
 
     # Processing state
     is_processing: bool = False
