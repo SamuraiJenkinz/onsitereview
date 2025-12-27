@@ -78,7 +78,7 @@
                 <div class="flex items-center">
                     <div class="flex-grow">
                         <div class="bg-gray-200 rounded-full h-4 w-full">
-                            <div class="bg-red-500 h-4 rounded-full" style="width: {{ (loop.index0 + 1) * 20 | min(100) }}%"></div>
+                            <div class="bg-red-500 h-4 rounded-full" style="width: {{ [(loop.index0 + 1) * 20, 100] | min }}%"></div>
                         </div>
                     </div>
                     <div class="ml-4 text-gray-700 whitespace-nowrap min-w-[200px]">{{ issue }}</div>
