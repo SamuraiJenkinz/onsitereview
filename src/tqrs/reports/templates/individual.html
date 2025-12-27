@@ -107,6 +107,108 @@
         </div>
         {% endif %}
 
+        <!-- Path to Passing Section (for failing tickets) -->
+        {% if not passed and not auto_fail and path_to_passing %}
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-2 flex items-center">
+                <span class="text-3xl mr-3">🎯</span>
+                Path to Passing
+            </h2>
+            <p class="text-gray-600 mb-6">Specific actions to reach the 90% passing threshold, prioritized by impact.</p>
+
+            <!-- Summary Card -->
+            {% for rec in path_to_passing %}
+            {% if rec.priority == 'summary' %}
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl p-6 mb-6 shadow-lg">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-lg font-semibold mb-1">{{ rec.action }}</div>
+                        <div class="text-indigo-100">{{ rec.details }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-4xl font-bold">+{{ rec.points_recoverable }}</div>
+                        <div class="text-indigo-200">points needed</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+            <!-- Action Items -->
+            <div class="space-y-4">
+                {% for rec in path_to_passing %}
+                {% if rec.priority != 'summary' and rec.priority != 'none' %}
+                <div class="border rounded-xl overflow-hidden {% if rec.priority == 'critical' %}border-red-300 bg-red-50{% elif rec.priority == 'high' %}border-orange-300 bg-orange-50{% elif rec.priority == 'medium' %}border-yellow-300 bg-yellow-50{% else %}border-gray-200 bg-gray-50{% endif %}">
+                    <div class="p-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    {% if rec.priority == 'critical' %}
+                                    <span class="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded-full">CRITICAL</span>
+                                    {% elif rec.priority == 'high' %}
+                                    <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">HIGH IMPACT</span>
+                                    {% elif rec.priority == 'medium' %}
+                                    <span class="px-2 py-1 bg-yellow-500 text-white text-xs font-bold rounded-full">MEDIUM</span>
+                                    {% else %}
+                                    <span class="px-2 py-1 bg-gray-400 text-white text-xs font-bold rounded-full">LOW</span>
+                                    {% endif %}
+                                    {% if rec.current %}
+                                    <span class="text-sm text-gray-500">Current: {{ rec.current }}</span>
+                                    {% endif %}
+                                </div>
+                                <h4 class="font-semibold text-gray-800 text-lg mb-1">{{ rec.action }}</h4>
+                                <p class="text-gray-600 text-sm">{{ rec.details }}</p>
+                            </div>
+                            <div class="ml-4 text-right flex-shrink-0">
+                                <div class="text-2xl font-bold {% if rec.priority == 'critical' %}text-red-600{% elif rec.priority == 'high' %}text-orange-600{% elif rec.priority == 'medium' %}text-yellow-600{% else %}text-gray-600{% endif %}">+{{ rec.points_recoverable }}</div>
+                                <div class="text-xs text-gray-500">points</div>
+                                <div class="mt-2 text-sm">
+                                    <span class="text-gray-500">→</span>
+                                    <span class="font-semibold {% if rec.projected_percentage >= 90 %}text-green-600{% else %}text-gray-700{% endif %}">{{ rec.projected_percentage }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if rec.projected_percentage >= 90 %}
+                    <div class="bg-green-100 px-4 py-2 border-t border-green-200">
+                        <span class="text-green-700 font-semibold text-sm">✓ This action would bring the ticket to passing!</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Visual Progress -->
+            <div class="mt-6 bg-gray-100 rounded-xl p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Progress to Passing</span>
+                    <span class="text-sm text-gray-500">{{ percentage }}% → 90%</span>
+                </div>
+                <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="absolute h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full" style="width: {{ percentage }}%"></div>
+                    <div class="absolute h-full w-0.5 bg-green-700" style="left: 90%"></div>
+                </div>
+                <div class="flex justify-between mt-1 text-xs text-gray-500">
+                    <span>0%</span>
+                    <span class="text-green-600 font-semibold">90% Pass</span>
+                    <span>100%</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Already Passing Message -->
+        {% if passed and not auto_fail %}
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl p-6 text-center">
+                <div class="text-4xl mb-2">🎉</div>
+                <div class="text-xl font-semibold">This ticket meets the quality standard!</div>
+                <div class="text-green-100 mt-2">Score: {{ percentage }}% (Passing threshold: 90%)</div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Detailed Scoring -->
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
             <h2 class="text-2xl font-bold mb-6">Detailed Scoring</h2>

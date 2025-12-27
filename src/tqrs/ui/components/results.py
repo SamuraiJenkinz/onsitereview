@@ -3,6 +3,7 @@
 import streamlit as st
 
 from tqrs.models.evaluation import EvaluationResult, PerformanceBand
+from tqrs.scoring.formatter import ResultFormatter
 from tqrs.ui.state import get_state, update_state
 
 
@@ -46,17 +47,37 @@ def render_ticket_details(result: EvaluationResult) -> None:
     # Score summary card
     render_score_card(result)
 
-    # Tabs for different sections
-    tab1, tab2, tab3 = st.tabs(["📊 Scores", "💪 Strengths & Improvements", "💡 Coaching"])
+    # Tabs for different sections - include Path to Passing for failing tickets
+    if not result.passed and not result.auto_fail:
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "🎯 Path to Passing",
+            "📊 Scores",
+            "💪 Strengths & Improvements",
+            "💡 Coaching"
+        ])
 
-    with tab1:
-        render_criterion_table(result)
+        with tab1:
+            render_path_to_passing(result)
 
-    with tab2:
-        render_strengths_improvements(result)
+        with tab2:
+            render_criterion_table(result)
 
-    with tab3:
-        render_coaching_section(result)
+        with tab3:
+            render_strengths_improvements(result)
+
+        with tab4:
+            render_coaching_section(result)
+    else:
+        tab1, tab2, tab3 = st.tabs(["📊 Scores", "💪 Strengths & Improvements", "💡 Coaching"])
+
+        with tab1:
+            render_criterion_table(result)
+
+        with tab2:
+            render_strengths_improvements(result)
+
+        with tab3:
+            render_coaching_section(result)
 
 
 def render_score_card(result: EvaluationResult) -> None:
@@ -101,6 +122,98 @@ def render_score_card(result: EvaluationResult) -> None:
         if result.critical_process_deduction:
             deductions.append(f"Critical Process: {result.critical_process_deduction}")
         st.warning(f"**Deductions Applied:** {', '.join(deductions)}")
+
+
+def render_path_to_passing(result: EvaluationResult) -> None:
+    """Render path to passing recommendations (like credit score improvement tips)."""
+    st.subheader("🎯 How to Reach 90% (Passing)")
+
+    # Generate path to passing recommendations
+    formatter = ResultFormatter()
+    recommendations = formatter.generate_path_to_passing(
+        criterion_scores=result.criterion_scores,
+        total_score=result.total_score,
+        max_score=result.max_score,
+        validation_deduction=result.validation_deduction,
+        critical_process_deduction=result.critical_process_deduction,
+    )
+
+    if not recommendations:
+        st.info("No improvement recommendations available.")
+        return
+
+    # Show summary card
+    for rec in recommendations:
+        if rec["priority"] == "summary":
+            points_needed = rec["points_recoverable"]
+            current_pct = result.percentage
+
+            # Summary box
+            st.markdown(
+                f"""
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white; padding: 1.5rem; border-radius: 1rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">
+                                {rec["action"]}
+                            </div>
+                            <div style="opacity: 0.9;">{rec["details"]}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 2.5rem; font-weight: bold;">+{points_needed}</div>
+                            <div style="opacity: 0.8;">points needed</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # Progress bar
+            st.progress(current_pct / 100, text=f"Current: {current_pct:.1f}% → Target: 90%")
+            break
+
+    st.divider()
+    st.markdown("### Prioritized Actions")
+    st.caption("Actions are sorted by impact. Focus on the top items first.")
+
+    # Show individual recommendations
+    for rec in recommendations:
+        if rec["priority"] in ("summary", "none"):
+            continue
+
+        # Priority badge color
+        priority_colors = {
+            "critical": ("#dc2626", "🚨"),
+            "high": ("#ea580c", "⚡"),
+            "medium": ("#ca8a04", "📌"),
+            "low": ("#6b7280", "💡"),
+        }
+        color, icon = priority_colors.get(rec["priority"], ("#6b7280", "•"))
+
+        # Create expandable section for each recommendation
+        with st.expander(
+            f"{icon} **+{rec['points_recoverable']} pts** - {rec['action']} → {rec['projected_percentage']}%",
+            expanded=rec["priority"] in ("critical", "high"),
+        ):
+            col1, col2 = st.columns([3, 1])
+
+            with col1:
+                st.markdown(f"**Details:** {rec.get('details', 'No additional details.')}")
+                if rec.get("current"):
+                    st.caption(f"Current score: {rec['current']}")
+
+            with col2:
+                st.metric(
+                    "Impact",
+                    f"+{rec['points_recoverable']}",
+                    delta=f"→ {rec['projected_percentage']}%",
+                )
+
+            # Highlight if this action alone would achieve passing
+            if rec["projected_percentage"] >= 90:
+                st.success("✓ This action would bring the ticket to passing!")
 
 
 def render_criterion_table(result: EvaluationResult) -> None:

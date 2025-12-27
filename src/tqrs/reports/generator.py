@@ -13,6 +13,7 @@ from tqrs.models.evaluation import (
     TemplateType,
 )
 from tqrs.models.ticket import ServiceNowTicket
+from tqrs.scoring.formatter import ResultFormatter
 
 
 class ReportGenerator:
@@ -112,6 +113,18 @@ class ReportGenerator:
         """
         template = self.env.get_template("individual.html")
 
+        # Generate path to passing recommendations for failing tickets
+        path_to_passing = []
+        if not result.passed and not result.auto_fail:
+            formatter = ResultFormatter()
+            path_to_passing = formatter.generate_path_to_passing(
+                criterion_scores=result.criterion_scores,
+                total_score=result.total_score,
+                max_score=result.max_score,
+                validation_deduction=result.validation_deduction,
+                critical_process_deduction=result.critical_process_deduction,
+            )
+
         context = {
             # Ticket info
             "ticket_number": result.ticket_number,
@@ -140,6 +153,8 @@ class ReportGenerator:
             "critical_process_status": self._get_critical_process_status(result),
             # Criterion breakdown
             "criterion_scores": self._prepare_criterion_data(result),
+            # Path to Passing (credit score style recommendations)
+            "path_to_passing": path_to_passing,
             # Coaching
             "strengths": result.strengths,
             "improvements": result.improvements,
