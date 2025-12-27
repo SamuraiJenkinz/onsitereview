@@ -1,202 +1,189 @@
-# CTSS Ticket Quality Review - Claude Code Handoff Package
+# TQRS - Ticket Quality Review System
 
-## 📦 Package Contents
+AI-powered ServiceNow ticket quality review system that automates the evaluation of incident tickets using a hybrid rules + LLM approach.
 
-This handoff package contains everything needed to build the CTSS Ticket Quality Review automation system.
+## Features
 
-### Files Included:
+- **Automated Scoring**: 70-point evaluation across multiple criteria
+- **Three Templates**: Incident Logging, Incident Handling, Customer Service
+- **AI-Powered Analysis**: OpenAI GPT-4o for nuanced quality assessment
+- **Professional Reports**: HTML reports with score gauges and coaching recommendations
+- **Batch Processing**: Evaluate hundreds of tickets with progress tracking
+- **Analytics Dashboard**: Score distributions, pass rates, common issues
 
-1. **CTSS_PROJECT_SPECIFICATION.md** ⭐ **START HERE**
-   - Complete technical specification (60+ pages)
-   - System architecture and data structures
-   - Detailed scoring rubrics for all three templates
-   - Code examples and implementation guidance
-   - Testing strategy and deployment instructions
+## Quick Start
 
-2. **scoring_rubrics.json**
-   - Machine-readable scoring criteria
-   - All three templates (Incident Logging, Handling, Customer Service)
-   - Point values and scoring options
-   - Critical for building the evaluation engine
+### 1. Install Dependencies
 
-3. **prototype_samples.json**
-   - 3 perfect sample tickets from real ServiceNow data
-   - All have 100/100 quality scores
-   - Use these for testing and validation
-   - Representative of actual production data
+```bash
+# Clone the repository
+git clone https://github.com/mmctech/IncidentReviews.git
+cd IncidentReviews
 
-## 🚀 Quick Start for Claude Code
-
-### Step 1: Read the Specification
-Open `CTSS_PROJECT_SPECIFICATION.md` and review:
-- Executive Summary (page 1)
-- System Architecture (page 2-3)
-- Scoring Rubrics (pages 10-25)
-- Data Structure (pages 4-9)
-
-### Step 2: Understand the Goal
-Build a Python application that:
-1. Parses ServiceNow JSON exports
-2. Evaluates tickets using rules + LLM
-3. Generates professional HTML reports
-4. Scores on 70-point scale with performance bands
-
-### Step 3: Start Building
-Recommended build order:
-1. **JSON Parser** (Day 1)
-   - Parse ServiceNow JSON format
-   - Extract and normalize fields
-   - Handle 3,831 ticket dataset
-
-2. **Rules Engine** (Day 2)
-   - Category/subcategory validation
-   - Short description format checker
-   - Spelling/grammar validation
-   - Validation detection
-
-3. **LLM Evaluator** (Day 3)
-   - Anthropic Claude API integration
-   - Structured prompt templates
-   - JSON response parsing
-   - Troubleshooting quality assessment
-
-4. **Scoring Calculator** (Day 4)
-   - Point calculation
-   - Deduction logic (validation, critical process)
-   - Performance band assignment
-
-5. **HTML Report Generator** (Day 5)
-   - Jinja2 templates
-   - Tailwind CSS styling
-   - Plotly visualizations
-   - Coaching recommendations
-
-6. **Testing & Refinement** (Day 6-7)
-   - Test with prototype_samples.json
-   - Validate against expected scores
-   - Generate sample reports
-
-## 📋 Key Requirements
-
-### Must Have:
-- ✅ Python 3.12+
-- ✅ Anthropic API key (Claude Sonnet 4)
-- ✅ Dependencies: anthropic, jinja2, language-tool-python, plotly
-
-### Architecture:
-```
-Input: ServiceNow JSON → Parser → Evaluator (Rules + LLM) → Scorer → HTML Report
+# Install with pip
+pip install -e .
 ```
 
-### Templates to Build:
-1. **Incident Logging** (70 pts) - Focus on documentation quality
-2. **Incident Handling** (70 pts) - Focus on troubleshooting and resolution
-3. **Customer Service** (70 pts) - Focus on soft skills and customer interaction
+### 2. Run the Application
 
-## 🎯 Success Criteria
+```bash
+streamlit run src/tqrs/ui/app.py
+```
 
-Your implementation should:
-- ✅ Parse the provided JSON samples without errors
-- ✅ Score INC8924218 at 100/100 (perfect ticket)
-- ✅ Generate professional HTML reports
-- ✅ Complete evaluation in <2 minutes per ticket
-- ✅ Match expected scores within ±5% variance
+### 3. Use the Web Interface
 
-## 📊 Sample Data Summary
+1. Open http://localhost:8501 in your browser
+2. Upload a ServiceNow JSON export (or click "Load Sample Data")
+3. Select an evaluation template
+4. Enter your OpenAI API key
+5. Click "Start Evaluation"
+6. View results and download reports
 
-The `prototype_samples.json` contains:
+## Requirements
 
-**INC8924218** - Phone, VDI Issue
-- Category: software > reset_restart
-- Validation: ✓ OKTA Push
-- Troubleshooting: ✓ Documented
-- Resolution: ✓ Complete
-- **Expected Score: 70/70 (100%)**
+- Python 3.11+
+- OpenAI API key (or Enterprise endpoint)
 
-**INC8924339** - Phone, Password Reset
-- Category: inquiry > password reset  
-- Validation: ✓ OKTA Push
-- Critical Process: ✓ Password reset
-- **Expected Score: 70/70 (100%)**
+## Installation
 
-**INC8923651** - Phone, Password Reset
-- Category: inquiry > password reset
-- Validation: ✓ OKTA Push
-- Critical Process: ✓ Password reset
-- **Expected Score: 70/70 (100%)**
+### From Source
 
-## 💡 Implementation Tips
+```bash
+git clone https://github.com/mmctech/IncidentReviews.git
+cd IncidentReviews
+pip install -e .
+```
 
-### For the JSON Parser:
-- Handle both sys_id references and display values
-- Some fields may be empty (work_notes, comments)
-- Parent/child incidents may be in different fields
-- Contact type is critical for evaluation routing
+### Dependencies
 
-### For the LLM Evaluator:
-- Use structured prompts with JSON schema output
-- Include specific scoring rubric in each prompt
-- Request evidence/reasoning for each score
-- Implement retry logic for API failures
+Core dependencies are installed automatically:
+- `openai` - LLM API client
+- `streamlit` - Web interface
+- `pydantic` - Data validation
+- `jinja2` - HTML report templates
+- `plotly` - Charts and visualizations
 
-### For HTML Reports:
-- Use Tailwind CDN (no build process needed)
-- Include Plotly gauge charts for visual appeal
-- Color-code performance bands (BLUE/GREEN/YELLOW/RED/PURPLE)
-- Make coaching recommendations actionable
+## Configuration
 
-### For Testing:
-- Start with INC8924218 (simplest perfect ticket)
-- Validate each criterion individually
-- Compare your scores to expected values in spec
-- Generate HTML and visually inspect
+### OpenAI API Key
 
-## 🔗 Reference Links
+Enter your API key in the web interface sidebar, or set it via environment variable:
 
-**In the Specification:**
-- Page 4-9: ServiceNow Data Structure
-- Page 10-16: Incident Logging Rubric
-- Page 17-21: Incident Handling Rubric  
-- Page 22-25: Customer Service Rubric
-- Page 34-42: LLM Prompt Examples
-- Page 43-48: HTML Report Template
+```bash
+export OPENAI_API_KEY=your-api-key-here
+```
 
-## 🚨 Critical Reminders
+### Enterprise OpenAI / Azure OpenAI
 
-1. **Validation Deduction:** -15 points if not documented properly, FAIL if not performed
-2. **Critical Process:** -35 points for failures, FAIL for password process violations
-3. **Minimum Score:** Always cap at 0 (never negative)
-4. **Pass Threshold:** 63/70 points (90%)
-5. **Short Description:** Must be 4-part format: [LoB] - [Location] - [App] - [Brief]
+For Enterprise endpoints, expand "Enterprise Settings" in the sidebar and enter your custom API Base URL:
 
-## 📝 Notes from Dr. Chen & Dr. Finch
+```
+https://your-endpoint.openai.azure.com/
+```
 
-**Chen:** "The data quality is excellent - 3,831 closed tickets, all with validation and resolution data. Focus on getting the parser right first, everything else follows."
+### Environment Variables
 
-**Finch:** "This is a classic hybrid AI system - 40% rules, 60% LLM. The rules give you speed and consistency, the LLM gives you nuance and coaching insights. Don't skip the rules engine."
+Create a `.env` file (see `envexample`):
 
-**Both:** "We've done all the analysis. The rubrics are clear, the data is clean, the architecture is proven. You've got everything you need. Build with confidence!"
+```bash
+# Required
+OPENAI_API_KEY=your-api-key-here
 
----
+# Optional - Enterprise endpoint
+OPENAI_BASE_URL=https://your-enterprise-endpoint.openai.azure.com/
 
-## ✅ Pre-Flight Checklist
+# Optional - Model settings
+OPENAI_MODEL=gpt-4o
+OPENAI_TEMPERATURE=0.1
+```
 
-Before you start coding:
-- [ ] Read CTSS_PROJECT_SPECIFICATION.md (at least Executive Summary and Architecture)
-- [ ] Review scoring_rubrics.json structure
-- [ ] Open prototype_samples.json and inspect ticket format
-- [ ] Understand the 4-part short description requirement
-- [ ] Know the difference between validation PASS/-15/FAIL
-- [ ] Understand critical process deductions (-35 vs FAIL)
+## Usage Guide
 
----
+### Uploading Tickets
 
-**Ready to build?** Start with the specification document and work through it section by section. You've got this! 🚀
+The system accepts ServiceNow JSON exports with this structure:
 
-**Questions?** Everything is in the spec. If something's unclear, re-read that section - we've been very thorough.
+```json
+{
+  "records": [
+    {
+      "number": "INC8924218",
+      "category": "software",
+      "subcategory": "reset_restart",
+      "short_description": "MMC-NCL Bangalore-VDI-error message",
+      "description": "Full ticket description...",
+      "close_notes": "Resolution notes...",
+      ...
+    }
+  ]
+}
+```
 
-**Timeline:** Realistically 5-7 days for a complete working system with all three templates.
+### Evaluation Templates
 
----
+| Template | Focus | Key Criteria |
+|----------|-------|--------------|
+| **Incident Logging** | Documentation quality | Category, description, short description format |
+| **Incident Handling** | Resolution process | Troubleshooting, routing, resolution notes |
+| **Customer Service** | Interaction quality | Greeting, empathy, follow-through |
 
-*Good luck from Dr. Chen and Dr. Finch!*
+### Scoring
+
+- **Maximum Score**: 70 points
+- **Pass Threshold**: 63 points (90%)
+- **Performance Bands**:
+  - BLUE: 95%+ (Exceptional)
+  - GREEN: 90-94% (Pass)
+  - YELLOW: 75-89% (Needs Improvement)
+  - RED: 50-74% (Below Standard)
+  - PURPLE: <50% (Critical)
+
+### Deductions
+
+- **Validation**: -15 points if not properly documented
+- **Critical Process**: -35 points for process violations
+- **Auto-Fail**: Password process violations result in automatic failure
+
+### Exporting Results
+
+From the Export tab:
+- **JSON**: Complete evaluation data
+- **CSV**: Summary spreadsheet
+- **HTML Batch Report**: Professional summary with charts
+- **HTML Individual Reports**: Detailed per-ticket reports
+
+## Project Structure
+
+```
+src/tqrs/
+├── models/          # Pydantic data models
+├── parser/          # ServiceNow JSON parser
+├── rules/           # Deterministic rule evaluators
+├── llm/             # OpenAI LLM integration
+├── scoring/         # Score calculation engine
+├── reports/         # HTML report generation
+└── ui/              # Streamlit web interface
+```
+
+## Development
+
+### Running Tests
+
+```bash
+pytest tests/ -v
+```
+
+### Code Quality
+
+```bash
+ruff check src/
+ruff format src/
+```
+
+## License
+
+MIT License
+
+## Support
+
+For issues and feature requests, please use the GitHub issue tracker.
