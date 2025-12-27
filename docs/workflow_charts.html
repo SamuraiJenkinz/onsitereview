@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TQRS Evaluation Workflow Charts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+            min-height: 100vh;
+        }
+
+        .workflow-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .flow-arrow {
+            position: relative;
+        }
+
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 12px solid #6366f1;
+        }
+
+        .flow-arrow-right::after {
+            bottom: auto;
+            right: -20px;
+            left: auto;
+            transform: translateY(-50%);
+            top: 50%;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 12px solid #6366f1;
+            border-right: none;
+        }
+
+        .glow-box {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .rules-engine {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #22c55e;
+        }
+
+        .llm-engine {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+        }
+
+        .scoring-engine {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 2px solid #3b82f6;
+        }
+
+        .report-output {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            border: 2px solid #a855f7;
+        }
+
+        .deduction-box {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #ef4444;
+        }
+
+        .criterion-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .connector-line {
+            height: 40px;
+            width: 3px;
+            background: linear-gradient(to bottom, #6366f1, #8b5cf6);
+            margin: 0 auto;
+        }
+
+        .connector-line-h {
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(to right, #6366f1, #8b5cf6);
+        }
+
+        .template-tab {
+            transition: all 0.3s ease;
+        }
+
+        .template-tab.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+        }
+
+        .template-tab:not(.active):hover {
+            background: #e0e7ff;
+        }
+
+        .workflow-section {
+            display: none;
+        }
+
+        .workflow-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-white mb-4">TQRS Evaluation Workflows</h1>
+            <p class="text-xl text-indigo-200">Ticket Quality Review System - How Each Template is Evaluated</p>
+        </div>
+
+        <!-- Template Tabs -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button onclick="showWorkflow('logging')" id="tab-logging" class="template-tab active px-8 py-4 rounded-xl font-semibold text-lg bg-white/80">
+                <span class="text-2xl mr-2">📋</span> Incident Logging
+            </button>
+            <button onclick="showWorkflow('handling')" id="tab-handling" class="template-tab px-8 py-4 rounded-xl font-semibold text-lg bg-white/80">
+                <span class="text-2xl mr-2">🔧</span> Incident Handling
+            </button>
+            <button onclick="showWorkflow('customer')" id="tab-customer" class="template-tab px-8 py-4 rounded-xl font-semibold text-lg bg-white/80">
+                <span class="text-2xl mr-2">💬</span> Customer Service
+            </button>
+        </div>
+
+        <!-- Incident Logging Workflow -->
+        <div id="workflow-logging" class="workflow-section active">
+            <div class="workflow-card p-8 glow-box">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Incident Logging Template</h2>
+                    <p class="text-gray-600">Focus: Documentation Quality & Proper Categorization</p>
+                    <div class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-100 rounded-full">
+                        <span class="text-indigo-700 font-semibold">Maximum Score: 70 Points</span>
+                        <span class="text-indigo-500">|</span>
+                        <span class="text-green-600 font-semibold">Pass: 90% (63 pts)</span>
+                    </div>
+                </div>
+
+                <!-- Input -->
+                <div class="flex justify-center mb-6">
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg pulse-glow">
+                        <span class="text-2xl mr-2">🎫</span> ServiceNow Ticket Input
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Parallel Processing -->
+                <div class="grid grid-cols-2 gap-8 my-8">
+                    <!-- Rules Engine -->
+                    <div class="rules-engine rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">⚙️</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-800">Rules Engine</h3>
+                                <p class="text-green-600 text-sm">Deterministic Pattern Matching</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Short Description Format</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">8 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">[LoB] - [Location] - [App] - [Brief]</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Category Selection</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Valid taxonomy selection</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Subcategory Selection</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Matches category appropriately</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Service Selection</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Business service identified</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">CI Selection</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Configuration item documented</p>
+                            </div>
+                        </div>
+
+                        <!-- Deduction Checks -->
+                        <div class="mt-4 pt-4 border-t-2 border-green-300">
+                            <h4 class="font-semibold text-green-800 mb-2">🚨 Deduction Checks</h4>
+                            <div class="deduction-box rounded-lg p-3 mb-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-red-700">Validation Check</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-15 pts</span>
+                                </div>
+                                <p class="text-sm text-red-600">OKTA/Phone/Chat validation required</p>
+                            </div>
+                            <div class="deduction-box rounded-lg p-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-red-700">Critical Process</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-35 / FAIL</span>
+                                </div>
+                                <p class="text-sm text-red-600">Password reset, VIP, Lost device</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LLM Evaluator -->
+                    <div class="llm-engine rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">🤖</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-amber-800">LLM Evaluator</h3>
+                                <p class="text-amber-600 text-sm">AI-Powered Quality Assessment</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Description Quality</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Evaluates completeness & clarity</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Contact info</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Error messages</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Usernames</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Issue statement</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Spelling & Grammar</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">2 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Professional writing quality</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-white/50 rounded-lg p-4">
+                            <h4 class="font-semibold text-amber-800 mb-2">📊 LLM Output</h4>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>✓ Numeric score with rubric</li>
+                                <li>✓ Evidence quotes from ticket</li>
+                                <li>✓ Reasoning explanation</li>
+                                <li>✓ Coaching recommendations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Scoring Engine -->
+                <div class="flex justify-center my-6">
+                    <div class="scoring-engine rounded-xl p-6 w-full max-w-2xl">
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">🧮</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800">Scoring Engine</h3>
+                                <p class="text-blue-600 text-sm">Combines Rules + LLM Results</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-green-600">28</div>
+                                <div class="text-sm text-gray-600">Rules Points</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-amber-600">22</div>
+                                <div class="text-sm text-gray-600">LLM Points</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-red-600">-0 to -50</div>
+                                <div class="text-sm text-gray-600">Deductions</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 text-center">
+                            <div class="inline-flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-full">
+                                <span class="text-blue-700">Final Score = Rules + LLM - Deductions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Output -->
+                <div class="flex justify-center">
+                    <div class="report-output rounded-xl p-6 w-full max-w-3xl">
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">📄</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-purple-800">Evaluation Report</h3>
+                                <p class="text-purple-600 text-sm">Complete Assessment Output</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-5 gap-2 text-center">
+                            <div class="bg-blue-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🔵 BLUE</div>
+                                <div class="text-xs">≥95%</div>
+                            </div>
+                            <div class="bg-green-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟢 GREEN</div>
+                                <div class="text-xs">≥90%</div>
+                            </div>
+                            <div class="bg-yellow-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟡 YELLOW</div>
+                                <div class="text-xs">≥75%</div>
+                            </div>
+                            <div class="bg-red-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🔴 RED</div>
+                                <div class="text-xs">≥50%</div>
+                            </div>
+                            <div class="bg-purple-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟣 PURPLE</div>
+                                <div class="text-xs">&lt;50%</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-3 gap-4">
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Score Breakdown</div>
+                                <div class="text-sm text-gray-600">By criterion</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Strengths</div>
+                                <div class="text-sm text-gray-600">What was done well</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Coaching</div>
+                                <div class="text-sm text-gray-600">Improvement areas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Handling Workflow -->
+        <div id="workflow-handling" class="workflow-section">
+            <div class="workflow-card p-8 glow-box">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Incident Handling Template</h2>
+                    <p class="text-gray-600">Focus: Troubleshooting Quality & Resolution Documentation</p>
+                    <div class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-100 rounded-full">
+                        <span class="text-indigo-700 font-semibold">Maximum Score: 70 Points</span>
+                        <span class="text-indigo-500">|</span>
+                        <span class="text-green-600 font-semibold">Pass: 90% (63 pts)</span>
+                    </div>
+                </div>
+
+                <!-- Input -->
+                <div class="flex justify-center mb-6">
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg pulse-glow">
+                        <span class="text-2xl mr-2">🎫</span> ServiceNow Ticket Input
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Parallel Processing -->
+                <div class="grid grid-cols-2 gap-8 my-8">
+                    <!-- Rules Engine -->
+                    <div class="rules-engine rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">⚙️</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-800">Rules Engine</h3>
+                                <p class="text-green-600 text-sm">Deterministic Pattern Matching</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Short Description Format</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">8 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">[LoB] - [Location] - [App] - [Brief]</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Category Selection</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Valid taxonomy selection</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Subcategory Selection</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Matches category appropriately</p>
+                            </div>
+                        </div>
+
+                        <!-- Deduction Checks -->
+                        <div class="mt-4 pt-4 border-t-2 border-green-300">
+                            <h4 class="font-semibold text-green-800 mb-2">🚨 Deduction Checks</h4>
+                            <div class="deduction-box rounded-lg p-3 mb-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-red-700">Validation Check</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-15 pts</span>
+                                </div>
+                                <p class="text-sm text-red-600">OKTA/Phone/Chat validation required</p>
+                            </div>
+                            <div class="deduction-box rounded-lg p-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-red-700">Critical Process</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-35 / FAIL</span>
+                                </div>
+                                <p class="text-sm text-red-600">Password reset, VIP, Lost device</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LLM Evaluator -->
+                    <div class="llm-engine rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">🤖</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-amber-800">LLM Evaluator</h3>
+                                <p class="text-amber-600 text-sm">AI-Powered Quality Assessment</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Description Quality</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Issue clarity & context documentation</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3 border-2 border-amber-400">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">🔧 Troubleshooting Quality</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Steps, progression, outcomes</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Steps documented</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Logical flow</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Outcomes noted</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3 border-2 border-amber-400">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">✅ Resolution Notes</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">15 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Clear resolution & confirmation</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">What was done</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Issue resolved</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">User confirmed</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Spelling & Grammar</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">2 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Professional writing quality</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Scoring Engine -->
+                <div class="flex justify-center my-6">
+                    <div class="scoring-engine rounded-xl p-6 w-full max-w-2xl">
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">🧮</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800">Scoring Engine</h3>
+                                <p class="text-blue-600 text-sm">Combines Rules + LLM Results</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-green-600">18</div>
+                                <div class="text-sm text-gray-600">Rules Points</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-amber-600">57</div>
+                                <div class="text-sm text-gray-600">LLM Points</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-red-600">-0 to -50</div>
+                                <div class="text-sm text-gray-600">Deductions</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 bg-white/50 rounded-lg p-3">
+                            <p class="text-center text-blue-700 text-sm">
+                                <strong>Note:</strong> Incident Handling relies more heavily on LLM evaluation for troubleshooting and resolution quality assessment
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Output -->
+                <div class="flex justify-center">
+                    <div class="report-output rounded-xl p-6 w-full max-w-3xl">
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">📄</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-purple-800">Evaluation Report</h3>
+                                <p class="text-purple-600 text-sm">Complete Assessment Output</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-5 gap-2 text-center">
+                            <div class="bg-blue-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🔵 BLUE</div>
+                                <div class="text-xs">≥95%</div>
+                            </div>
+                            <div class="bg-green-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟢 GREEN</div>
+                                <div class="text-xs">≥90%</div>
+                            </div>
+                            <div class="bg-yellow-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟡 YELLOW</div>
+                                <div class="text-xs">≥75%</div>
+                            </div>
+                            <div class="bg-red-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🔴 RED</div>
+                                <div class="text-xs">≥50%</div>
+                            </div>
+                            <div class="bg-purple-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟣 PURPLE</div>
+                                <div class="text-xs">&lt;50%</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-3 gap-4">
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Score Breakdown</div>
+                                <div class="text-sm text-gray-600">By criterion</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Strengths</div>
+                                <div class="text-sm text-gray-600">What was done well</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Coaching</div>
+                                <div class="text-sm text-gray-600">Improvement areas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Service Workflow -->
+        <div id="workflow-customer" class="workflow-section">
+            <div class="workflow-card p-8 glow-box">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Customer Service Template</h2>
+                    <p class="text-gray-600">Focus: Communication Quality & Professional Interaction</p>
+                    <div class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-100 rounded-full">
+                        <span class="text-indigo-700 font-semibold">Maximum Score: 70 Points</span>
+                        <span class="text-indigo-500">|</span>
+                        <span class="text-green-600 font-semibold">Pass: 90% (63 pts)</span>
+                    </div>
+                </div>
+
+                <!-- Input -->
+                <div class="flex justify-center mb-6">
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg pulse-glow">
+                        <span class="text-2xl mr-2">🎫</span> ServiceNow Ticket Input
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Parallel Processing -->
+                <div class="grid grid-cols-2 gap-8 my-8">
+                    <!-- Rules Engine -->
+                    <div class="rules-engine rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">⚙️</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-800">Rules Engine</h3>
+                                <p class="text-green-600 text-sm">Minimal Rule Checks</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Short Description Format</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">8 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">[LoB] - [Location] - [App] - [Brief]</p>
+                            </div>
+
+                            <div class="bg-gray-100 rounded-lg p-4 text-center">
+                                <p class="text-gray-500 italic">Customer Service evaluation relies primarily on LLM for soft skills assessment</p>
+                            </div>
+                        </div>
+
+                        <!-- Deduction Checks -->
+                        <div class="mt-4 pt-4 border-t-2 border-green-300">
+                            <h4 class="font-semibold text-green-800 mb-2">🚨 Deduction Checks</h4>
+                            <div class="deduction-box rounded-lg p-3 mb-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-red-700">Validation Check</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-15 pts</span>
+                                </div>
+                                <p class="text-sm text-red-600">OKTA/Phone/Chat validation required</p>
+                            </div>
+                            <div class="deduction-box rounded-lg p-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-red-700">Critical Process</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-35 / FAIL</span>
+                                </div>
+                                <p class="text-sm text-red-600">Password reset, VIP, Lost device</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LLM Evaluator -->
+                    <div class="llm-engine rounded-xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">🤖</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-amber-800">LLM Evaluator</h3>
+                                <p class="text-amber-600 text-sm">Primary Evaluation Engine</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Description Quality</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Issue clarity & context documentation</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Troubleshooting Quality</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Steps, progression, outcomes</p>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3 border-2 border-amber-400">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">💬 Customer Service Quality</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Communication & soft skills</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Professional tone</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Empathy shown</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Clear communication</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Proper greeting</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Expectations set</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-semibold text-gray-700">Spelling & Grammar</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">2 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Professional writing quality</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Scoring Engine -->
+                <div class="flex justify-center my-6">
+                    <div class="scoring-engine rounded-xl p-6 w-full max-w-2xl">
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">🧮</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800">Scoring Engine</h3>
+                                <p class="text-blue-600 text-sm">Combines Rules + LLM Results</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-green-600">8</div>
+                                <div class="text-sm text-gray-600">Rules Points</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-amber-600">62</div>
+                                <div class="text-sm text-gray-600">LLM Points</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3">
+                                <div class="text-3xl font-bold text-red-600">-0 to -50</div>
+                                <div class="text-sm text-gray-600">Deductions</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 bg-white/50 rounded-lg p-3">
+                            <p class="text-center text-blue-700 text-sm">
+                                <strong>Note:</strong> Customer Service is primarily evaluated by LLM for tone, empathy, and communication quality
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Output -->
+                <div class="flex justify-center">
+                    <div class="report-output rounded-xl p-6 w-full max-w-3xl">
+                        <div class="flex items-center justify-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-2xl">📄</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-purple-800">Evaluation Report</h3>
+                                <p class="text-purple-600 text-sm">Complete Assessment Output</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-5 gap-2 text-center">
+                            <div class="bg-blue-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🔵 BLUE</div>
+                                <div class="text-xs">≥95%</div>
+                            </div>
+                            <div class="bg-green-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟢 GREEN</div>
+                                <div class="text-xs">≥90%</div>
+                            </div>
+                            <div class="bg-yellow-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟡 YELLOW</div>
+                                <div class="text-xs">≥75%</div>
+                            </div>
+                            <div class="bg-red-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🔴 RED</div>
+                                <div class="text-xs">≥50%</div>
+                            </div>
+                            <div class="bg-purple-500 text-white rounded-lg p-2">
+                                <div class="text-lg font-bold">🟣 PURPLE</div>
+                                <div class="text-xs">&lt;50%</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-3 gap-4">
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Score Breakdown</div>
+                                <div class="text-sm text-gray-600">By criterion</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Strengths</div>
+                                <div class="text-sm text-gray-600">What was done well</div>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-3 text-center">
+                                <div class="text-purple-700 font-semibold">Coaching</div>
+                                <div class="text-sm text-gray-600">Improvement areas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-8 workflow-card p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Legend</h3>
+            <div class="grid grid-cols-4 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-green-500 rounded-lg"></div>
+                    <span class="text-gray-700">Rules Engine - Deterministic checks</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-amber-500 rounded-lg"></div>
+                    <span class="text-gray-700">LLM Evaluator - AI assessment</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-500 rounded-lg"></div>
+                    <span class="text-gray-700">Scoring Engine - Calculation</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-purple-500 rounded-lg"></div>
+                    <span class="text-gray-700">Report Output - Final result</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-indigo-200">
+            <p>TQRS - Ticket Quality Review System | Created by Kevin Taylor</p>
+        </div>
+    </div>
+
+    <script>
+        function showWorkflow(type) {
+            // Hide all workflows
+            document.querySelectorAll('.workflow-section').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Deactivate all tabs
+            document.querySelectorAll('.template-tab').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected workflow
+            document.getElementById('workflow-' + type).classList.add('active');
+
+            // Activate selected tab
+            document.getElementById('tab-' + type).classList.add('active');
+        }
+    </script>
+</body>
+</html>
