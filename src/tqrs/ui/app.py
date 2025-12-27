@@ -355,20 +355,33 @@ def run_evaluation() -> None:
 
 def load_sample_data() -> None:
     """Load sample data for demonstration."""
+    from pathlib import Path
+
+    from tqrs.parser.servicenow import ServiceNowParser
+
+    # Find sample file relative to project root
+    sample_paths = [
+        Path("prototype_samples.json"),
+        Path(__file__).parent.parent.parent.parent / "prototype_samples.json",
+        Path("C:/TQRS/prototype_samples.json"),
+    ]
+
+    sample_file = None
+    for path in sample_paths:
+        if path.exists():
+            sample_file = path
+            break
+
+    if not sample_file:
+        set_error("Sample data file not found")
+        return
+
     try:
-        with open("prototype_samples.json") as f:
+        with open(sample_file) as f:
             data = json.load(f)
 
-        from tqrs.parser.servicenow import ServiceNowParser
-
         parser = ServiceNowParser()
-        tickets = []
-        for record in data.get("records", []):
-            try:
-                ticket = parser.parse_ticket(record)
-                tickets.append(ticket)
-            except Exception:
-                continue
+        tickets = parser.parse_json(data)
 
         if tickets:
             update_state(tickets=tickets)
@@ -377,8 +390,6 @@ def load_sample_data() -> None:
         else:
             set_error("No valid tickets found in sample data")
 
-    except FileNotFoundError:
-        set_error("Sample data file not found")
     except Exception as e:
         set_error(f"Error loading sample data: {e}")
 

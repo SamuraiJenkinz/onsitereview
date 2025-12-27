@@ -20,7 +20,12 @@
       "Bash(cat:*)",
       "Bash(git remote add:*)",
       "Bash(git add:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: complete TQRS ticket quality review system\n\nImplemented all 6 phases of the AI-powered ServiceNow ticket \nquality review system:\n\nPhase 1 - Foundation:\n- ServiceNow JSON parser with field extraction\n- Pydantic models for tickets and evaluations\n- Project scaffolding with pyproject.toml\n\nPhase 2 - Rules Engine:\n- Short description 4-part format validator\n- Validation detection \\(OKTA/phone/chat\\)\n- Category/subcategory taxonomy validation\n- Critical process detection \\(password reset, VIP\\)\n\nPhase 3 - LLM Evaluator:\n- OpenAI API client with retry logic\n- Structured prompts for 5 evaluation criteria\n- Description, troubleshooting, resolution, customer service, spelling\n\nPhase 4 - Scoring Engine:\n- 70-point score calculation\n- Deduction logic \\(validation -15, critical process -35\\)\n- Performance band assignment \\(BLUE/GREEN/YELLOW/RED/PURPLE\\)\n\nPhase 5 - Streamlit UI:\n- File upload and template selection\n- Real-time progress tracking\n- Analytics dashboard with Plotly charts\n- JSON/CSV export\n\nPhase 6 - Reporting:\n- Jinja2 HTML templates with Tailwind CSS\n- Plotly.js score gauge visualization\n- Individual and batch summary reports\n- Coaching recommendations\n\n196 tests passing.\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(streamlit run:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
