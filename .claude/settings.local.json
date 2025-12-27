@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(if [ -d .git ])",
+      "Bash([ -f .git ])",
+      "Bash(then echo \"Git repo exists in current directory\")",
+      "Bash(else git init)",
+      "Bash(fi)",
+      "Bash(mkdir:*)",
+      "Bash([ -f \"C:/TQRS/.planning/PROJECT.md\" ])",
+      "Bash({ echo \"ERROR: No PROJECT.md found. Run /gsd:new-project first.\")",
+      "Bash(exit 1)",
+      "Bash(})",
+      "Bash([ -f \"C:/TQRS/.planning/ROADMAP.md\" ])",
+      "Bash(pip install:*)",
+      "Bash(cd:*)",
+      "Bash(ruff check:*)",
+      "Bash(python:*)",
+      "Bash(pytest:*)",
+      "Bash(cat:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)"
+    ]
+  }
+}

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Quality Review - {{ ticket_number }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-6xl mx-auto p-8">
+
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Ticket Quality Review</h1>
+                    <p class="text-xl text-gray-600 mt-2">{{ ticket_number }}</p>
+                    <p class="text-sm text-gray-500 mt-1">Evaluated: {{ evaluated_at }}</p>
+                </div>
+                <div class="text-right">
+                    {% if auto_fail %}
+                    <div class="text-5xl font-bold text-red-600">FAIL</div>
+                    <div class="text-lg font-semibold text-red-600 mt-2">Auto-Failed</div>
+                    <div class="text-sm text-gray-600 mt-1">{{ auto_fail_reason }}</div>
+                    {% else %}
+                    <div class="text-5xl font-bold" style="color: {{ band_color }}">{{ percentage }}%</div>
+                    <div class="text-lg font-semibold mt-2" style="color: {{ band_color }}">{{ band }}</div>
+                    <div class="text-sm text-gray-600 mt-1">{{ total_score }}/{{ max_score }} points</div>
+                    <div class="mt-2">
+                        {% if passed %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            PASS
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                            NEEDS IMPROVEMENT
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Executive Summary</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="text-sm text-gray-600">Template</div>
+                    <div class="text-lg font-semibold text-blue-800">{{ template_name }}</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="text-sm text-gray-600">Contact Type</div>
+                    <div class="text-lg font-semibold text-green-800">{{ contact_type }}</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <div class="text-sm text-gray-600">Category</div>
+                    <div class="text-lg font-semibold text-purple-800">{{ category }} &gt; {{ subcategory }}</div>
+                </div>
+            </div>
+
+            <!-- Score Gauge -->
+            {% if not auto_fail %}
+            <div id="score-gauge" class="flex justify-center"></div>
+            {% endif %}
+        </div>
+
+        <!-- Deductions Section (if applicable) -->
+        {% if validation_deduction != 0 or critical_process_deduction != 0 %}
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Deductions Applied</h2>
+
+            <div class="space-y-4">
+                {% if validation_deduction != 0 %}
+                <div class="bg-orange-50 border-l-4 border-orange-400 p-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold text-orange-800">Validation Deduction</div>
+                            <div class="text-orange-700 text-sm">{{ validation_status }}</div>
+                        </div>
+                        <div class="text-2xl font-bold text-orange-600">{{ validation_deduction }} pts</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if critical_process_deduction != 0 %}
+                <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold text-red-800">Critical Process Deduction</div>
+                            <div class="text-red-700 text-sm">{{ critical_process_status }}</div>
+                        </div>
+                        <div class="text-2xl font-bold text-red-600">{{ critical_process_deduction }} pts</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Detailed Scoring -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Detailed Scoring</h2>
+
+            {% for criterion in criterion_scores %}
+            <div class="border-b border-gray-200 pb-6 mb-6 last:border-b-0 last:mb-0 last:pb-0">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="text-xl font-semibold text-gray-800">{{ criterion.name }}</h3>
+                    <div class="text-right">
+                        <span class="text-2xl font-bold {% if criterion.percentage >= 90 %}text-green-600{% elif criterion.percentage >= 70 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                            {{ criterion.score }}/{{ criterion.max_points }}
+                        </span>
+                        <div class="text-sm text-gray-500">{{ criterion.percentage }}%</div>
+                    </div>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div class="h-2 rounded-full {% if criterion.percentage >= 90 %}bg-green-500{% elif criterion.percentage >= 70 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
+                         style="width: {{ criterion.percentage }}%"></div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg mb-3">
+                    <div class="text-sm font-semibold text-gray-700 mb-1">Evidence:</div>
+                    <div class="text-gray-800 whitespace-pre-wrap">{{ criterion.evidence }}</div>
+                </div>
+
+                <div class="text-gray-700 mb-3">
+                    <span class="font-semibold">Reasoning:</span> {{ criterion.reasoning }}
+                </div>
+
+                {% if criterion.coaching %}
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <div class="text-sm font-semibold text-yellow-800 mb-1">Coaching Recommendation:</div>
+                    <div class="text-yellow-900">{{ criterion.coaching }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Coaching Summary -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Coaching Summary</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Strengths -->
+                <div class="bg-green-50 border-l-4 border-green-400 p-6 rounded-r-lg">
+                    <div class="font-semibold text-green-800 mb-3 text-lg">Strengths</div>
+                    {% if strengths %}
+                    <ul class="space-y-2">
+                        {% for strength in strengths %}
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">&#10003;</span>
+                            <span class="text-green-900">{{ strength }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-green-700 italic">No specific strengths identified.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Areas for Improvement -->
+                <div class="bg-red-50 border-l-4 border-red-400 p-6 rounded-r-lg">
+                    <div class="font-semibold text-red-800 mb-3 text-lg">Areas for Improvement</div>
+                    {% if improvements %}
+                    <ul class="space-y-2">
+                        {% for improvement in improvements %}
+                        <li class="flex items-start">
+                            <span class="text-red-600 mr-2">&#9888;</span>
+                            <span class="text-red-900">{{ improvement }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-green-700 italic">No improvement areas identified - excellent work!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Details -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8 page-break">
+            <h2 class="text-2xl font-bold mb-6">Ticket Details</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <div class="text-sm text-gray-600 mb-1">Short Description</div>
+                    <div class="font-medium bg-gray-50 p-3 rounded">{{ short_description }}</div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-600 mb-1">Priority</div>
+                    <div class="font-medium bg-gray-50 p-3 rounded">{{ priority }}</div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <div class="text-sm text-gray-600 mb-1">Description</div>
+                <div class="bg-gray-50 p-4 rounded whitespace-pre-wrap text-sm font-mono">{{ description }}</div>
+            </div>
+
+            {% if close_notes %}
+            <div>
+                <div class="text-sm text-gray-600 mb-1">Close Notes</div>
+                <div class="bg-gray-50 p-4 rounded whitespace-pre-wrap text-sm font-mono">{{ close_notes }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-gray-500 text-sm py-4">
+            <p>Generated by TQRS - Ticket Quality Review System</p>
+            <p>Report generated on {{ generated_at }}</p>
+        </div>
+    </div>
+
+    {% if not auto_fail %}
+    <script>
+    // Gauge chart for score visualization
+    var data = [{
+        type: "indicator",
+        mode: "gauge+number+delta",
+        value: {{ percentage }},
+        title: { text: "Quality Score", font: { size: 24 } },
+        delta: { reference: 90, increasing: { color: "#22C55E" }, decreasing: { color: "#EF4444" } },
+        gauge: {
+            axis: { range: [0, 100], tickwidth: 1, tickcolor: "#6B7280" },
+            bar: { color: "{{ band_color }}" },
+            bgcolor: "white",
+            borderwidth: 2,
+            bordercolor: "#E5E7EB",
+            steps: [
+                { range: [0, 50], color: "#FEE2E2" },
+                { range: [50, 75], color: "#FEF3C7" },
+                { range: [75, 90], color: "#D1FAE5" },
+                { range: [90, 95], color: "#A7F3D0" },
+                { range: [95, 100], color: "#BFDBFE" }
+            ],
+            threshold: {
+                line: { color: "#EF4444", width: 4 },
+                thickness: 0.75,
+                value: 90
+            }
+        }
+    }];
+
+    var layout = {
+        width: 500,
+        height: 350,
+        margin: { t: 50, r: 50, l: 50, b: 30 },
+        paper_bgcolor: "transparent",
+        font: { color: "#374151", family: "ui-sans-serif, system-ui, sans-serif" }
+    };
+
+    var config = { responsive: true, displayModeBar: false };
+
+    Plotly.newPlot('score-gauge', data, layout, config);
+    </script>
+    {% endif %}
+</body>
+</html>

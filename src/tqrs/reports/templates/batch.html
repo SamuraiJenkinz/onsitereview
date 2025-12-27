@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Quality Review Summary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+        .sortable:hover { cursor: pointer; }
+        .sortable:hover::after { content: ' ↕'; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto p-8">
+
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Batch Quality Review Summary</h1>
+                    <p class="text-gray-600 mt-2">{{ template_name }} Evaluation</p>
+                    <p class="text-sm text-gray-500 mt-1">Generated: {{ generated_at }}</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-5xl font-bold" style="color: {{ average_band_color }}">{{ average_percentage }}%</div>
+                    <div class="text-lg text-gray-600 mt-2">Average Score</div>
+                    <div class="text-sm text-gray-500 mt-1">{{ pass_rate }}% Pass Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="text-3xl font-bold text-blue-600">{{ total_tickets }}</div>
+                <div class="text-gray-600">Total Tickets</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="text-3xl font-bold text-green-600">{{ passed_count }}</div>
+                <div class="text-gray-600">Passed</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="text-3xl font-bold text-red-600">{{ failed_count }}</div>
+                <div class="text-gray-600">Failed</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="text-3xl font-bold text-gray-600">{{ "%.1f"|format(average_score) }}/70</div>
+                <div class="text-gray-600">Avg Score</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Score Distribution -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Score Distribution</h2>
+                <div id="score-histogram"></div>
+            </div>
+
+            <!-- Band Distribution -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Performance Bands</h2>
+                <div id="band-pie"></div>
+            </div>
+        </div>
+
+        <!-- Common Issues -->
+        {% if common_issues %}
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Common Issues</h2>
+            <div class="space-y-4">
+                {% for issue in common_issues %}
+                <div class="flex items-center">
+                    <div class="flex-grow">
+                        <div class="bg-gray-200 rounded-full h-4 w-full">
+                            <div class="bg-red-500 h-4 rounded-full" style="width: {{ (loop.index0 + 1) * 20 | min(100) }}%"></div>
+                        </div>
+                    </div>
+                    <div class="ml-4 text-gray-700 whitespace-nowrap min-w-[200px]">{{ issue }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Results Table -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8 page-break">
+            <h2 class="text-2xl font-bold mb-6">Individual Results</h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sortable">
+                                Ticket
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sortable">
+                                Score
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sortable">
+                                Percentage
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Band
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Deductions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for result in results %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ result.ticket_number }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ result.total_score }}/{{ result.max_score }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="h-2 rounded-full {% if result.percentage >= 90 %}bg-green-500{% elif result.percentage >= 75 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
+                                             style="width: {{ result.percentage }}%"></div>
+                                    </div>
+                                    <span class="text-sm text-gray-900">{{ result.percentage }}%</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                                      style="background-color: {{ result.band_color }}20; color: {{ result.band_color }}">
+                                    {{ result.band }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if result.auto_fail %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    AUTO-FAIL
+                                </span>
+                                {% elif result.passed %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    PASS
+                                </span>
+                                {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    FAIL
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if result.validation_deduction != 0 %}
+                                <span class="text-orange-600">Val: {{ result.validation_deduction }}</span>
+                                {% endif %}
+                                {% if result.critical_process_deduction != 0 %}
+                                <span class="text-red-600 ml-2">CP: {{ result.critical_process_deduction }}</span>
+                                {% endif %}
+                                {% if result.validation_deduction == 0 and result.critical_process_deduction == 0 %}
+                                <span class="text-gray-400">None</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Performance Analysis -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Performance Analysis</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Band Breakdown -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Band Distribution</h3>
+                    <div class="space-y-3">
+                        {% for band, count in band_distribution.items() %}
+                        <div class="flex items-center">
+                            <span class="w-20 text-sm font-medium" style="color: {{ band_colors[band] }}">{{ band }}</span>
+                            <div class="flex-grow bg-gray-200 rounded-full h-4 mx-3">
+                                <div class="h-4 rounded-full" style="background-color: {{ band_colors[band] }}; width: {{ (count / total_tickets * 100) if total_tickets > 0 else 0 }}%"></div>
+                            </div>
+                            <span class="text-sm text-gray-600 w-20 text-right">{{ count }} ({{ "%.0f"|format((count / total_tickets * 100) if total_tickets > 0 else 0) }}%)</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Key Metrics -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Key Metrics</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between py-2 border-b border-gray-100">
+                            <span class="text-gray-600">Total Evaluation Time</span>
+                            <span class="font-medium">{{ "%.1f"|format(total_time_seconds / 60) }} minutes</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-gray-100">
+                            <span class="text-gray-600">Average Time per Ticket</span>
+                            <span class="font-medium">{{ "%.1f"|format(total_time_seconds / total_tickets if total_tickets > 0 else 0) }} seconds</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-gray-100">
+                            <span class="text-gray-600">Auto-Fail Count</span>
+                            <span class="font-medium">{{ auto_fail_count }}</span>
+                        </div>
+                        <div class="flex justify-between py-2">
+                            <span class="text-gray-600">Highest Score</span>
+                            <span class="font-medium text-green-600">{{ highest_score }}/70</span>
+                        </div>
+                        <div class="flex justify-between py-2">
+                            <span class="text-gray-600">Lowest Score</span>
+                            <span class="font-medium text-red-600">{{ lowest_score }}/70</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-gray-500 text-sm py-4">
+            <p>Generated by TQRS - Ticket Quality Review System</p>
+            <p>Report generated on {{ generated_at }}</p>
+        </div>
+    </div>
+
+    <script>
+    // Score Distribution Histogram
+    var scores = {{ scores_json | safe }};
+    var histogramData = [{
+        x: scores,
+        type: 'histogram',
+        marker: {
+            color: scores.map(s => {
+                if (s >= 66.5) return '#3B82F6';  // Blue
+                if (s >= 63) return '#22C55E';    // Green
+                if (s >= 52.5) return '#EAB308';  // Yellow
+                if (s >= 35) return '#EF4444';    // Red
+                return '#A855F7';                  // Purple
+            })
+        },
+        xbins: {
+            start: 0,
+            end: 70,
+            size: 5
+        }
+    }];
+
+    var histogramLayout = {
+        xaxis: {
+            title: 'Score',
+            range: [0, 70],
+            dtick: 10
+        },
+        yaxis: { title: 'Count' },
+        bargap: 0.1,
+        shapes: [{
+            type: 'line',
+            x0: 63,
+            x1: 63,
+            y0: 0,
+            y1: 1,
+            yref: 'paper',
+            line: {
+                color: '#EF4444',
+                width: 2,
+                dash: 'dash'
+            }
+        }],
+        annotations: [{
+            x: 63,
+            y: 1,
+            yref: 'paper',
+            text: 'Pass (90%)',
+            showarrow: false,
+            yshift: 10,
+            font: { size: 10, color: '#EF4444' }
+        }],
+        margin: { t: 30, r: 30, l: 50, b: 50 },
+        height: 300
+    };
+
+    Plotly.newPlot('score-histogram', histogramData, histogramLayout, { responsive: true, displayModeBar: false });
+
+    // Band Distribution Pie Chart
+    var bandLabels = {{ band_labels_json | safe }};
+    var bandValues = {{ band_values_json | safe }};
+    var bandColors = {{ band_colors_json | safe }};
+
+    var pieData = [{
+        values: bandValues,
+        labels: bandLabels,
+        type: 'pie',
+        marker: {
+            colors: bandColors
+        },
+        textinfo: 'label+percent',
+        textposition: 'outside',
+        hole: 0.4
+    }];
+
+    var pieLayout = {
+        showlegend: false,
+        margin: { t: 30, r: 30, l: 30, b: 30 },
+        height: 300
+    };
+
+    Plotly.newPlot('band-pie', pieData, pieLayout, { responsive: true, displayModeBar: false });
+    </script>
+</body>
+</html>

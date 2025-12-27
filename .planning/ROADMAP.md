@@ -14,12 +14,12 @@ None - standard Python/Streamlit patterns apply.
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Foundation** - Project setup, JSON parser, data models
-- [ ] **Phase 2: Rules Engine** - Deterministic evaluations (40% of scoring)
-- [ ] **Phase 3: LLM Evaluator** - OpenAI integration for nuanced assessments (60%)
-- [ ] **Phase 4: Scoring Engine** - Score calculation, bands, pass/fail logic
-- [ ] **Phase 5: Streamlit UI** - Web interface with upload, progress, analytics
-- [ ] **Phase 6: Reporting** - HTML reports with coaching recommendations
+- [x] **Phase 1: Foundation** - Project setup, JSON parser, data models
+- [x] **Phase 2: Rules Engine** - Deterministic evaluations (40% of scoring)
+- [x] **Phase 3: LLM Evaluator** - OpenAI integration for nuanced assessments (60%)
+- [x] **Phase 4: Scoring Engine** - Score calculation, bands, pass/fail logic
+- [x] **Phase 5: Streamlit UI** - Web interface with upload, progress, analytics
+- [x] **Phase 6: Reporting** - HTML reports with coaching recommendations
 
 ## Phase Details
 
@@ -27,7 +27,7 @@ None - standard Python/Streamlit patterns apply.
 **Goal**: Establish project structure, parse ServiceNow JSON, define data models
 **Depends on**: Nothing (first phase)
 **Research**: Unlikely (standard Python patterns)
-**Plans**: TBD
+**Plans**: 1 (01-01-PLAN.md)
 
 Key deliverables:
 - Project scaffolding (pyproject.toml, src/ structure)
@@ -40,7 +40,7 @@ Key deliverables:
 **Goal**: Implement deterministic evaluation rules (40% of total scoring)
 **Depends on**: Phase 1
 **Research**: Unlikely (regex, string parsing - established patterns)
-**Plans**: TBD
+**Plans**: 1 (02-01-PLAN.md)
 
 Key deliverables:
 - Short description 4-part format validator ([LoB] - [Location] - [App] - [Brief])
@@ -54,7 +54,7 @@ Key deliverables:
 **Depends on**: Phase 2
 **Research**: Likely (new API integration)
 **Research topics**: OpenAI Python SDK, structured output JSON schemas, GPT-4o vs GPT-4-turbo accuracy/cost, rate limit handling
-**Plans**: TBD
+**Plans**: 1 (03-01-PLAN.md)
 
 Key deliverables:
 - OpenAI API client with retry logic
@@ -126,9 +126,9 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
-| 2. Rules Engine | 0/TBD | Not started | - |
-| 3. LLM Evaluator | 0/TBD | Not started | - |
-| 4. Scoring Engine | 0/TBD | Not started | - |
-| 5. Streamlit UI | 0/TBD | Not started | - |
-| 6. Reporting | 0/TBD | Not started | - |
+| 1. Foundation | 1/1 | Complete | 2025-12-26 |
+| 2. Rules Engine | 1/1 | Complete | 2025-12-26 |
+| 3. LLM Evaluator | 1/1 | Complete | 2025-12-26 |
+| 4. Scoring Engine | 1/1 | Complete | 2025-12-26 |
+| 5. Streamlit UI | 1/1 | Complete | 2025-12-26 |
+| 6. Reporting | 1/1 | Complete | 2025-12-26 |
