@@ -46,13 +46,31 @@ def render_upload_section() -> None:
         "Customer Service": TemplateType.CUSTOMER_SERVICE,
     }
 
+    # Get current template to detect changes
+    current_template = state.template
+
     selected_template = st.radio(
         "Select template",
         options=list(template_options.keys()),
-        index=0,
+        index=list(template_options.values()).index(current_template),
         help="Choose the evaluation template based on what aspect you want to assess",
     )
-    update_state(template=template_options[selected_template])
+    new_template = template_options[selected_template]
+
+    # If template changed, reset evaluation state (but keep tickets and API config)
+    if new_template != current_template:
+        update_state(
+            template=new_template,
+            results=None,
+            summary=None,
+            is_processing=False,
+            current_progress=None,
+            selected_ticket_index=0,
+            errors=[],
+        )
+        st.rerun()
+    else:
+        update_state(template=new_template)
 
     st.divider()
 
