@@ -55,9 +55,16 @@ class CriticalProcessDetector:
             "description": "VIP/Executive Support",
             "patterns": [
                 r"\bvip\b",
-                r"\bexecutive\b",
+                r"\bvip\s*(user|customer|client|caller|ticket)\b",
                 r"\bc-suite\b",
                 r"\bsenior\s*leadership\b",
+                r"\bexecutive\s*(support|issue|user|request|escalation)\b",
+                r"\b(ceo|cfo|cto|cio|coo)\b",
+            ],
+            # Exclude job title patterns that cause false positives
+            "exclude_patterns": [
+                r"executive[-\s]*(assistant|coordinator|administrator|operations|director|manager|secretary)",
+                r"(regards|sincerely|thank|from)[,:\s]*\n.*executive",  # Email signatures
             ],
             "priority_requirement": ["1", "2"],  # VIP should be high priority
             "auto_fail_on_violation": False,
@@ -184,10 +191,21 @@ class CriticalProcessDetector:
                     continue
 
             # Check patterns in text
+            pattern_matched = False
             for pattern in config["patterns"]:
                 if re.search(pattern, full_text, re.IGNORECASE):
-                    detected.append(process_type)
+                    pattern_matched = True
                     break
+
+            # If pattern matched, check for exclusions (false positive filters)
+            if pattern_matched and "exclude_patterns" in config:
+                for exclude_pattern in config["exclude_patterns"]:
+                    if re.search(exclude_pattern, full_text, re.IGNORECASE):
+                        pattern_matched = False  # Exclude this match
+                        break
+
+            if pattern_matched:
+                detected.append(process_type)
 
         return list(set(detected))  # Remove duplicates
 
