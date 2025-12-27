@@ -182,11 +182,11 @@ def _test_llm_connection(state) -> None:
                     max_retries=1,
                 )
 
-            # Send a simple test message
+            # Send a simple test message (include 'json' in prompt for Azure compatibility)
             response = client.complete(
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": "Say 'Connection successful!' in exactly those words."},
+                    {"role": "system", "content": "You are a helpful assistant. Respond in JSON format."},
+                    {"role": "user", "content": "Return a json object with a single key 'status' and value 'ok'."},
                 ],
                 response_format={"type": "json_object"},
             )
