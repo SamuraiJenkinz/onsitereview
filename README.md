@@ -5,7 +5,7 @@ AI-powered ServiceNow ticket quality review system that automates the evaluation
 ## Features
 
 - **Automated Scoring**: 70-point evaluation across multiple criteria
-- **Three Templates**: Incident Logging, Incident Handling, Customer Service
+- **Two Templates**: Incident Logging and Incident Handling
 - **AI-Powered Analysis**: OpenAI GPT-4o for nuanced quality assessment
 - **Professional Reports**: HTML reports with score gauges and coaching recommendations
 - **Batch Processing**: Evaluate hundreds of tickets with progress tracking
@@ -125,7 +125,8 @@ The system accepts ServiceNow JSON exports with this structure:
 |----------|-------|--------------|
 | **Incident Logging** | Documentation quality | Category, description, short description format |
 | **Incident Handling** | Resolution process | Troubleshooting, routing, resolution notes |
-| **Customer Service** | Interaction quality | Greeting, empathy, follow-through |
+
+> **Note:** Customer Service template has been disabled. Its criteria (greeting, closing message, interaction quality) require phone/chat transcript data from systems like Five9, which is not captured in ServiceNow incident records.
 
 ### Scoring
 

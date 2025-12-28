@@ -93,8 +93,8 @@ def render_welcome_view() -> None:
 
         ### Getting Started
 
-        1. **Upload** a ServiceNow JSON export using the sidebar
-        2. **Select** an evaluation template (Logging, Handling, or Customer Service)
+        1. **Upload** a ServiceNow JSON export (or PDF for single tickets) using the sidebar
+        2. **Select** an evaluation template (Logging or Handling)
         3. **Configure** your OpenAI API key
         4. **Start** the evaluation and watch the progress
         5. **Review** results and coaching recommendations
@@ -105,7 +105,6 @@ def render_welcome_view() -> None:
         |----------|------------|--------------|
         | **Incident Logging** | Documentation quality | Category, description, short description format |
         | **Incident Handling** | Resolution process | Troubleshooting, routing, resolution notes |
-        | **Customer Service** | Interaction quality | Greeting, empathy, follow-through |
 
         ### Scoring
 

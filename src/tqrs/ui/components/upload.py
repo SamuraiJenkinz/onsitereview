@@ -62,7 +62,6 @@ def render_upload_section() -> None:
     template_options = {
         "Incident Logging": TemplateType.INCIDENT_LOGGING,
         "Incident Handling": TemplateType.INCIDENT_HANDLING,
-        "Customer Service": TemplateType.CUSTOMER_SERVICE,
     }
 
     # Get current template to detect changes
