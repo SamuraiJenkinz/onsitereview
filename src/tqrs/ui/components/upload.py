@@ -7,6 +7,7 @@ import streamlit as st
 
 from tqrs.models.evaluation import TemplateType
 from tqrs.models.ticket import ServiceNowTicket
+from tqrs.parser.pdf import PDFParser
 from tqrs.parser.servicenow import ServiceNowParser
 from tqrs.ui.state import get_state, has_data, reset_state, set_error, set_success, update_state
 
@@ -15,26 +16,44 @@ def render_upload_section() -> None:
     """Render file upload interface in sidebar."""
     st.header("📤 Upload & Configure")
 
-    # File upload
-    uploaded_file = st.file_uploader(
+    # Batch upload - JSON
+    st.subheader("📁 Batch Upload (JSON)")
+    uploaded_json = st.file_uploader(
         "Upload ServiceNow JSON",
         type=["json"],
-        help="Upload a JSON file exported from ServiceNow containing ticket records",
+        help="Upload a JSON file exported from ServiceNow containing multiple ticket records",
+        key="json_uploader",
     )
 
     # Only process if it's a new file (not already loaded)
-    if uploaded_file is not None:
+    if uploaded_json is not None:
         # Check if this is a new file by comparing name
         current_file = st.session_state.get("_uploaded_file_name")
-        if current_file != uploaded_file.name:
+        if current_file != uploaded_json.name:
             # Mark as processed BEFORE handling to prevent rerun loop
-            st.session_state["_uploaded_file_name"] = uploaded_file.name
-            _handle_file_upload(uploaded_file)
+            st.session_state["_uploaded_file_name"] = uploaded_json.name
+            _handle_json_upload(uploaded_json)
+
+    # Single ticket upload - PDF
+    st.subheader("📄 Single Ticket (PDF)")
+    uploaded_pdf = st.file_uploader(
+        "Upload Incident PDF",
+        type=["pdf"],
+        help="Upload a single incident PDF report exported from ServiceNow",
+        key="pdf_uploader",
+    )
+
+    # Process PDF upload
+    if uploaded_pdf is not None:
+        current_pdf = st.session_state.get("_uploaded_pdf_name")
+        if current_pdf != uploaded_pdf.name:
+            st.session_state["_uploaded_pdf_name"] = uploaded_pdf.name
+            _handle_pdf_upload(uploaded_pdf)
 
     # Show ticket count if loaded
     state = get_state()
     if has_data():
-        st.success(f"✅ {len(state.tickets)} tickets loaded")
+        st.success(f"✅ {len(state.tickets)} ticket(s) loaded")
 
     st.divider()
 
@@ -166,11 +185,12 @@ def render_upload_section() -> None:
         if st.button("🔄 Reset", use_container_width=True):
             reset_state()
             st.session_state.pop("_uploaded_file_name", None)
+            st.session_state.pop("_uploaded_pdf_name", None)
             st.rerun()
 
     # Help text
     if not has_data():
-        st.info("👆 Upload a JSON file to get started")
+        st.info("👆 Upload a JSON file (batch) or PDF (single ticket) to get started")
     elif not api_key:
         st.warning("⚠️ Enter your API key to enable evaluation")
 
@@ -223,8 +243,8 @@ def _test_llm_connection(state) -> None:
                 st.error(f"❌ Connection failed: {error_msg[:200]}")
 
 
-def _handle_file_upload(uploaded_file: BytesIO) -> None:
-    """Handle uploaded file parsing."""
+def _handle_json_upload(uploaded_file: BytesIO) -> None:
+    """Handle uploaded JSON file parsing."""
     with st.spinner("Parsing tickets..."):
         try:
             # Read and parse JSON
@@ -250,6 +270,30 @@ def _handle_file_upload(uploaded_file: BytesIO) -> None:
             set_error(f"Invalid JSON: {e}")
         except Exception as e:
             set_error(f"Error processing file: {e}")
+
+
+def _handle_pdf_upload(uploaded_file: BytesIO) -> None:
+    """Handle uploaded PDF file parsing."""
+    with st.spinner("Parsing PDF..."):
+        try:
+            # Parse PDF
+            parser = PDFParser()
+            ticket = parser.parse_bytes(uploaded_file)
+
+            if ticket is None:
+                set_error("Could not extract ticket data from PDF. Ensure it's a ServiceNow incident report.")
+                return
+
+            # Validate we have minimum data
+            if not ticket.number:
+                set_error("PDF does not contain a valid ticket number")
+                return
+
+            update_state(tickets=[ticket], results=None, summary=None)
+            set_success(f"Loaded ticket {ticket.number} from PDF")
+
+        except Exception as e:
+            set_error(f"Error processing PDF: {e}")
 
 
 def validate_json_structure(data: dict) -> tuple[bool, str]:
