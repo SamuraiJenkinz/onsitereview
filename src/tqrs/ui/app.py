@@ -278,10 +278,17 @@ def render_export_section() -> None:
                     result=result,
                     ticket=ticket,
                 )
+                # Template abbreviation for filename
+                template_abbrev = {
+                    "incident_logging": "il",
+                    "incident_handling": "ih",
+                    "customer_service": "cs",
+                }.get(state.template.value, "review")
+
                 st.download_button(
                     f"⬇️ Download {selected_ticket} Report",
                     data=individual_html,
-                    file_name=f"{selected_ticket}_review.html",
+                    file_name=f"{selected_ticket}_{template_abbrev}.html",
                     mime="text/html",
                     use_container_width=True,
                 )
