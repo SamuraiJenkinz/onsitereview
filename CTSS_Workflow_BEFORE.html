@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTSS Ticket Quality Review - BEFORE (Manual Process)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%);
+            min-height: 100vh;
+        }
+
+        .workflow-card {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        }
+
+        .connector-line {
+            height: 40px;
+            width: 4px;
+            background: linear-gradient(to bottom, #dc2626, #b91c1c);
+            margin: 0 auto;
+        }
+
+        .manual-step {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 3px solid #dc2626;
+        }
+
+        .excel-box {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 3px solid #16a34a;
+        }
+
+        .review-step {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 3px solid #f59e0b;
+        }
+
+        .output-box {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            border: 3px solid #a855f7;
+        }
+
+        .pain-point {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #ef4444;
+            border-left: 4px solid #dc2626;
+        }
+
+        .template-tab {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .template-tab.active {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.6);
+        }
+
+        .template-tab:not(.active):hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .workflow-section {
+            display: none;
+        }
+
+        .workflow-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .time-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 2px solid #dc2626;
+            color: #991b1b;
+        }
+
+        .glow-box {
+            box-shadow: 0 0 40px rgba(220, 38, 38, 0.4);
+        }
+
+        .manual-icon {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .inefficiency-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="inline-block mb-4 px-8 py-3 bg-red-600/90 text-white rounded-full font-bold text-lg">
+                ⚠️ BEFORE: Manual Process
+            </div>
+            <h1 class="text-6xl font-black text-white mb-4">CTSS Ticket Quality Review</h1>
+            <p class="text-2xl text-red-200 mb-2">Current State: Manual Excel-Based Workflow</p>
+            <p class="text-lg text-red-300">Labor-Intensive • Time-Consuming • Inconsistent</p>
+        </div>
+
+        <!-- Template Tabs -->
+        <div class="flex justify-center gap-6 mb-10">
+            <button onclick="showWorkflow('logging')" id="tab-logging" 
+                    class="template-tab active px-10 py-5 rounded-2xl font-bold text-lg bg-white/20 text-white">
+                <span class="text-3xl mr-3">📋</span> Incident Logging
+            </button>
+            <button onclick="showWorkflow('handling')" id="tab-handling"
+                    class="template-tab px-10 py-5 rounded-2xl font-bold text-lg bg-white/20 text-white">
+                <span class="text-3xl mr-3">🔧</span> Incident Handling
+            </button>
+        </div>
+
+        <!-- Incident Logging Workflow -->
+        <div id="workflow-logging" class="workflow-section active">
+            <div class="workflow-card p-10 glow-box">
+                <div class="text-center mb-10">
+                    <h2 class="text-4xl font-black section-header mb-3">Incident Logging Template</h2>
+                    <p class="text-xl text-gray-600 mb-4">Manual Review Process</p>
+                    <div class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-full border-2 border-red-200">
+                        <span class="text-red-700 font-bold text-lg">70 Points • Excel-Based Scoring</span>
+                        <span class="text-red-400 text-2xl">•</span>
+                        <span class="time-badge">⏱️ ~15 min per ticket</span>
+                    </div>
+                </div>
+
+                <!-- Step 1: Export -->
+                <div class="flex justify-center mb-8">
+                    <div class="manual-step px-10 py-6 rounded-2xl shadow-2xl manual-icon">
+                        <div class="flex items-center gap-4">
+                            <span class="text-5xl">📥</span>
+                            <div>
+                                <h3 class="text-2xl font-bold text-red-800">Step 1: Manual Export</h3>
+                                <p class="text-red-600">Export ticket from ServiceNow</p>
+                                <div class="time-badge mt-2">2-3 minutes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Step 2: Open Excel -->
+                <div class="flex justify-center mb-8">
+                    <div class="excel-box px-10 py-6 rounded-2xl shadow-2xl manual-icon">
+                        <div class="flex items-center gap-4">
+                            <span class="text-5xl">📊</span>
+                            <div>
+                                <h3 class="text-2xl font-bold text-green-800">Step 2: Open Excel Template</h3>
+                                <p class="text-green-600">CTSS_Ticket_Quality_Review_Incident_Logging_TemplateV2.xlsx</p>
+                                <div class="time-badge mt-2">30 seconds</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Step 3: Manual Review -->
+                <div class="review-step rounded-2xl p-8 mb-8 shadow-2xl">
+                    <div class="text-center mb-6">
+                        <h3 class="text-3xl font-black text-amber-800 mb-2">Step 3: Manual Evaluation</h3>
+                        <p class="text-amber-600 mb-4">Team Lead Reviews & Scores Each Criterion</p>
+                        <div class="time-badge">⏱️ 10-12 minutes</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Manual Checks Column 1 -->
+                        <div class="space-y-4">
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Correct Category</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Review ServiceNow ticket, check category dropdown</p>
+                                <p class="text-xs text-red-600 italic">• Open ticket in browser</p>
+                                <p class="text-xs text-red-600 italic">• Compare against taxonomy</p>
+                                <p class="text-xs text-red-600 italic">• Enter score in Excel (0/5/10)</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Correct Subcategory</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Validate subcategory matches issue</p>
+                                <p class="text-xs text-red-600 italic">• Check subcategory field</p>
+                                <p class="text-xs text-red-600 italic">• Verify alignment with category</p>
+                                <p class="text-xs text-red-600 italic">• Enter score in Excel (0/5/10)</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Service & CI</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Check both service and configuration item</p>
+                                <p class="text-xs text-red-600 italic">• Review both fields</p>
+                                <p class="text-xs text-red-600 italic">• Validate against issue type</p>
+                                <p class="text-xs text-red-600 italic">• Enter 2 scores (10 pts each)</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Short Description</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Validate 4-part format manually</p>
+                                <p class="text-xs text-red-600 italic">• Read short description</p>
+                                <p class="text-xs text-red-600 italic">• Count parts (LoB-Location-App-Brief)</p>
+                                <p class="text-xs text-red-600 italic">• Check each for accuracy</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/2/4/6/8)</p>
+                            </div>
+                        </div>
+
+                        <!-- Manual Checks Column 2 -->
+                        <div class="space-y-4">
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Description Quality</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Read entire description, check completeness</p>
+                                <p class="text-xs text-red-600 italic">• Read full description field</p>
+                                <p class="text-xs text-red-600 italic">• Check for validation template</p>
+                                <p class="text-xs text-red-600 italic">• Verify contact info, location</p>
+                                <p class="text-xs text-red-600 italic">• Check error messages, usernames</p>
+                                <p class="text-xs text-red-600 italic">• Count missing items</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/5/10/15/20)</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Spelling & Grammar</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Manual proofreading of all text</p>
+                                <p class="text-xs text-red-600 italic">• Re-read description carefully</p>
+                                <p class="text-xs text-red-600 italic">• Count spelling errors</p>
+                                <p class="text-xs text-red-600 italic">• Count grammar mistakes</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/1/2)</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Validation Check</span>
+                                    <span class="inefficiency-tag">👁️ Manual + Five9</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Check validation documentation</p>
+                                <p class="text-xs text-red-600 italic">• Review description for validation</p>
+                                <p class="text-xs text-red-600 italic">• Check Five9 validation report</p>
+                                <p class="text-xs text-red-600 italic">• Match timestamp & analyst</p>
+                                <p class="text-xs text-red-600 italic">• Enter PASS/-15/FAIL</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Critical Process</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Determine if critical process applies</p>
+                                <p class="text-xs text-red-600 italic">• Review issue type</p>
+                                <p class="text-xs text-red-600 italic">• Check against critical process list</p>
+                                <p class="text-xs text-red-600 italic">• Verify process was followed</p>
+                                <p class="text-xs text-red-600 italic">• Enter PASS/-35/FAIL/N/A</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Step 4: Calculate -->
+                <div class="flex justify-center mb-8">
+                    <div class="excel-box px-10 py-6 rounded-2xl shadow-2xl">
+                        <div class="flex items-center gap-4">
+                            <span class="text-5xl">🧮</span>
+                            <div>
+                                <h3 class="text-2xl font-bold text-green-800">Step 4: Calculate Score</h3>
+                                <p class="text-green-600">Excel formulas sum points & apply deductions</p>
+                                <div class="time-badge mt-2">30 seconds</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Step 5: Write Coaching -->
+                <div class="flex justify-center mb-8">
+                    <div class="manual-step px-10 py-6 rounded-2xl shadow-2xl">
+                        <div class="flex items-center gap-4">
+                            <span class="text-5xl">✍️</span>
+                            <div>
+                                <h3 class="text-2xl font-bold text-red-800">Step 5: Write Coaching Notes</h3>
+                                <p class="text-red-600">Manual notes on areas for improvement</p>
+                                <div class="time-badge mt-2">2-3 minutes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Output -->
+                <div class="output-box rounded-2xl p-7 shadow-xl">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                            <span class="text-white text-3xl">📄</span>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-purple-800">Output: Excel Spreadsheet</h3>
+                            <p class="text-purple-600 text-sm font-semibold">Filled template with scores & notes</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white/70 rounded-lg p-4 text-center">
+                            <div class="text-sm text-gray-600 mb-1">Format</div>
+                            <div class="text-lg font-bold text-gray-800">.xlsx File</div>
+                        </div>
+                        <div class="bg-white/70 rounded-lg p-4 text-center">
+                            <div class="text-sm text-gray-600 mb-1">Distribution</div>
+                            <div class="text-lg font-bold text-gray-800">Email</div>
+                        </div>
+                        <div class="bg-white/70 rounded-lg p-4 text-center">
+                            <div class="text-sm text-gray-600 mb-1">Storage</div>
+                            <div class="text-lg font-bold text-gray-800">SharePoint</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pain Points -->
+                <div class="mt-10 space-y-4">
+                    <h3 class="text-2xl font-black text-red-800 mb-4">⚠️ Key Pain Points</h3>
+                    
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">⏰</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">Time-Consuming</h4>
+                                <p class="text-sm text-gray-700">15+ minutes per ticket. Reviewing 30 tickets/month = 7.5 hours of manual work</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">😰</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">Human Fatigue & Bias</h4>
+                                <p class="text-sm text-gray-700">Reviewer fatigue leads to inconsistent scoring. Same ticket scored differently by different reviewers</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">🔄</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">Context Switching</h4>
+                                <p class="text-sm text-gray-700">Constant switching between ServiceNow, Excel, Five9 reports. Cognitive load high</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">📊</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">Limited Analytics</h4>
+                                <p class="text-sm text-gray-700">No trend analysis. No aggregate insights. Each review is isolated</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">🎯</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">Shallow Coaching</h4>
+                                <p class="text-sm text-gray-700">Generic coaching notes. No AI-powered insights on patterns or specific improvements</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Handling Workflow -->
+        <div id="workflow-handling" class="workflow-section">
+            <div class="workflow-card p-10 glow-box">
+                <div class="text-center mb-10">
+                    <h2 class="text-4xl font-black section-header mb-3">Incident Handling Template</h2>
+                    <p class="text-xl text-gray-600 mb-4">Manual Review Process</p>
+                    <div class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-full border-2 border-red-200">
+                        <span class="text-red-700 font-bold text-lg">70 Points • Excel-Based Scoring</span>
+                        <span class="text-red-400 text-2xl">•</span>
+                        <span class="time-badge">⏱️ ~20 min per ticket</span>
+                    </div>
+                </div>
+
+                <!-- Same structure as Logging but with different criteria -->
+                <div class="review-step rounded-2xl p-8 mb-8 shadow-2xl">
+                    <div class="text-center mb-6">
+                        <h3 class="text-3xl font-black text-amber-800 mb-2">Manual Evaluation Process</h3>
+                        <p class="text-amber-600 mb-4">Team Lead Reviews Troubleshooting & Resolution Quality</p>
+                        <div class="time-badge">⏱️ 15-17 minutes</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Priority Validation</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Check if VIP/OWG priority set correctly</p>
+                                <p class="text-xs text-red-600 italic">• Review priority field</p>
+                                <p class="text-xs text-red-600 italic">• Check for VIP/OWG indicators</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/5)</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Troubleshooting Assessment</span>
+                                    <span class="inefficiency-tag">👁️ Manual • Subjective</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Read ALL troubleshooting steps, evaluate quality</p>
+                                <p class="text-xs text-red-600 italic">• Read description & work notes</p>
+                                <p class="text-xs text-red-600 italic">• Assess if sufficient for issue</p>
+                                <p class="text-xs text-red-600 italic">• Judge documentation quality</p>
+                                <p class="text-xs text-red-600 italic">• Subjective scoring (0/5/10/15/20)</p>
+                                <p class="text-xs text-red-600 italic">⚠️ High variance between reviewers</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Interaction vs Incident</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Check if interaction properly linked</p>
+                                <p class="text-xs text-red-600 italic">• Check parent/child fields</p>
+                                <p class="text-xs text-red-600 italic">• Determine if interaction needed</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/5)</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Routing & Resolving</span>
+                                    <span class="inefficiency-tag">👁️ Manual • Subjective</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Assess routing decisions & FCR opportunities</p>
+                                <p class="text-xs text-red-600 italic">• Review assignment group changes</p>
+                                <p class="text-xs text-red-600 italic">• Judge if FCR was possible</p>
+                                <p class="text-xs text-red-600 italic">• Assess routing correctness</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/20)</p>
+                                <p class="text-xs text-red-600 italic">⚠️ Requires deep technical knowledge</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Resolution Code</span>
+                                    <span class="inefficiency-tag">👁️ Manual</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Check resolution code accuracy</p>
+                                <p class="text-xs text-red-600 italic">• Review close code field</p>
+                                <p class="text-xs text-red-600 italic">• Validate against resolution type</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/5)</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-5 border-2 border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Resolution Notes Quality</span>
+                                    <span class="inefficiency-tag">👁️ Manual • Subjective</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Evaluate completeness of resolution documentation</p>
+                                <p class="text-xs text-red-600 italic">• Read close notes carefully</p>
+                                <p class="text-xs text-red-600 italic">• Check for "what was done"</p>
+                                <p class="text-xs text-red-600 italic">• Look for "issue resolved" confirmation</p>
+                                <p class="text-xs text-red-600 italic">• Verify "colleague agreed to close"</p>
+                                <p class="text-xs text-red-600 italic">• Enter score (0/5/10/15)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pain Points -->
+                <div class="mt-10 space-y-4">
+                    <h3 class="text-2xl font-black text-red-800 mb-4">⚠️ Additional Challenges for Incident Handling</h3>
+                    
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">🎭</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">High Subjectivity</h4>
+                                <p class="text-sm text-gray-700">Troubleshooting quality scoring (20 points) varies significantly between reviewers. No objective standard</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">🧠</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">Requires Deep Technical Knowledge</h4>
+                                <p class="text-sm text-gray-700">Evaluating routing decisions & FCR opportunities demands expertise in multiple technical domains</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pain-point rounded-xl p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">📚</span>
+                            <div>
+                                <h4 class="font-bold text-red-800 mb-1">Heavy Reading Load</h4>
+                                <p class="text-sm text-gray-700">Must read description, all work notes, comments, close notes. Cognitive fatigue sets in quickly</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Summary -->
+        <div class="mt-12 bg-red-900/90 rounded-2xl p-8 text-white shadow-2xl">
+            <h2 class="text-3xl font-black mb-6 text-center">📊 Manual Process Summary</h2>
+            
+            <div class="grid grid-cols-3 gap-6 mb-8">
+                <div class="bg-white/10 rounded-xl p-6 text-center">
+                    <div class="text-5xl mb-3">⏱️</div>
+                    <div class="text-4xl font-bold mb-2">15-25 min</div>
+                    <div class="text-lg text-red-200">Per Ticket Review</div>
+                </div>
+                <div class="bg-white/10 rounded-xl p-6 text-center">
+                    <div class="text-5xl mb-3">😰</div>
+                    <div class="text-4xl font-bold mb-2">High</div>
+                    <div class="text-lg text-red-200">Subjectivity & Variance</div>
+                </div>
+                <div class="bg-white/10 rounded-xl p-6 text-center">
+                    <div class="text-5xl mb-3">📉</div>
+                    <div class="text-4xl font-bold mb-2">Limited</div>
+                    <div class="text-lg text-red-200">Scalability & Insights</div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <p class="text-xl font-semibold mb-4">Current State: Unsustainable</p>
+                <p class="text-lg text-red-200">30 tickets/month × 20 minutes = 10 hours of manual review work per team lead</p>
+                <p class="text-lg text-red-200 mt-2">Result: Only ~3% of tickets can be reviewed due to time constraints</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-12 text-white/60 text-sm">
+            <p>CTSS Ticket Quality Review System | BEFORE State: Manual Excel-Based Process</p>
+            <p class="mt-2">Time-Consuming • Inconsistent • Not Scalable • Limited Insights</p>
+        </div>
+    </div>
+
+    <script>
+        function showWorkflow(template) {
+            document.querySelectorAll('.workflow-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.template-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById('workflow-' + template).classList.add('active');
+            document.getElementById('tab-' + template).classList.add('active');
+        }
+    </script>
+</body>
+</html>

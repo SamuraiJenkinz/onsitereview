@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTSS Ticket Quality Review - Evaluation Workflows</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        .workflow-card {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        }
+
+        .connector-line {
+            height: 40px;
+            width: 4px;
+            background: linear-gradient(to bottom, #6366f1, #8b5cf6);
+            margin: 0 auto;
+        }
+
+        .rules-engine {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 3px solid #10b981;
+        }
+
+        .llm-engine {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 3px solid #f59e0b;
+        }
+
+        .scoring-engine {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 3px solid #3b82f6;
+        }
+
+        .report-output {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            border: 3px solid #a855f7;
+        }
+
+        .deduction-box {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #ef4444;
+        }
+
+        .criterion-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .template-tab {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .template-tab.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.6);
+        }
+
+        .template-tab:not(.active):hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .workflow-section {
+            display: none;
+        }
+
+        .workflow-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.9); }
+        }
+
+        .glow-box {
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .criterion-card {
+            transition: all 0.2s ease;
+        }
+
+        .criterion-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-6xl font-black text-white mb-4">CTSS Ticket Quality Review</h1>
+            <p class="text-2xl text-indigo-200 mb-2">AI-Powered Evaluation Workflows</p>
+            <p class="text-lg text-indigo-300">How Each Template Measures Excellence</p>
+        </div>
+
+        <!-- Template Tabs -->
+        <div class="flex justify-center gap-6 mb-10">
+            <button onclick="showWorkflow('logging')" id="tab-logging" 
+                    class="template-tab active px-10 py-5 rounded-2xl font-bold text-lg bg-white/20 text-white">
+                <span class="text-3xl mr-3">📋</span> Incident Logging
+            </button>
+            <button onclick="showWorkflow('handling')" id="tab-handling"
+                    class="template-tab px-10 py-5 rounded-2xl font-bold text-lg bg-white/20 text-white">
+                <span class="text-3xl mr-3">🔧</span> Incident Handling
+            </button>
+        </div>
+
+        <!-- Incident Logging Workflow -->
+        <div id="workflow-logging" class="workflow-section active">
+            <div class="workflow-card p-10 glow-box">
+                <div class="text-center mb-10">
+                    <h2 class="text-4xl font-black section-header mb-3">Incident Logging Template</h2>
+                    <p class="text-xl text-gray-600 mb-4">Focus: Documentation Quality & Accurate Categorization</p>
+                    <div class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-full border-2 border-indigo-200">
+                        <span class="text-indigo-700 font-bold text-lg">Maximum Score: 70 Points</span>
+                        <span class="text-indigo-400 text-2xl">•</span>
+                        <span class="text-green-600 font-bold text-lg">Pass Threshold: 90% (63 pts)</span>
+                    </div>
+                </div>
+
+                <!-- Input -->
+                <div class="flex justify-center mb-8">
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl pulse-glow">
+                        <span class="text-3xl mr-3">🎫</span> ServiceNow Ticket Input
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Parallel Processing -->
+                <div class="grid grid-cols-2 gap-10 my-10">
+                    <!-- Rules Engine -->
+                    <div class="rules-engine rounded-2xl p-7 shadow-xl">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                                <span class="text-white text-3xl">⚙️</span>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-black text-green-800">Rules Engine</h3>
+                                <p class="text-green-600 text-sm font-semibold">40 Points • Deterministic Validation</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-green-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Correct Category</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">10 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Software, Hardware, Inquiry, Network</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-green-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Correct Subcategory</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">10 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Password reset, Access request, Performance</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-green-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Correct Service</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">10 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Active Directory, VDI, Citrix, Outlook</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-green-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Configuration Item</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">10 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">CI matches service & issue</p>
+                            </div>
+                        </div>
+
+                        <!-- Deduction Checks -->
+                        <div class="mt-6 pt-6 border-t-2 border-green-300">
+                            <h4 class="font-black text-green-800 mb-3 text-lg">🚨 Critical Deductions</h4>
+                            <div class="deduction-box rounded-xl p-4 mb-3 shadow-md">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-red-700">Validation Failure</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-15 pts</span>
+                                </div>
+                                <p class="text-xs text-red-600">Not documented or OKTA not confirmed</p>
+                            </div>
+                            <div class="deduction-box rounded-xl p-4 shadow-md">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-red-700">Critical Process Failure</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-35 / FAIL</span>
+                                </div>
+                                <p class="text-xs text-red-600">Password, VIP, Lost/Stolen, Security</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LLM Evaluator -->
+                    <div class="llm-engine rounded-2xl p-7 shadow-xl">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                <span class="text-white text-3xl">🤖</span>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-black text-amber-800">LLM Evaluator</h3>
+                                <p class="text-amber-600 text-sm font-semibold">30 Points • AI Quality Assessment</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Short Description Format</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">8 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">4-part structure validation</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded font-semibold">LoB</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded font-semibold">Location</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded font-semibold">Application</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded font-semibold">Brief Desc</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Description Completeness</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Contains all required elements</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Contact info</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Issue details</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Usernames</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Errors</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Spelling & Grammar</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">2 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Professional writing quality</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-white/60 rounded-xl p-4 border-2 border-amber-300">
+                            <h4 class="font-bold text-amber-800 mb-2">📊 AI Analysis Output</h4>
+                            <ul class="text-sm text-gray-700 space-y-1">
+                                <li>• Point score with evidence</li>
+                                <li>• Specific improvement areas</li>
+                                <li>• Coaching recommendations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scoring Engine -->
+                <div class="connector-line"></div>
+                
+                <div class="scoring-engine rounded-2xl p-7 my-8 shadow-xl">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-black text-blue-800 mb-4">⚡ Scoring Engine</h3>
+                        <div class="grid grid-cols-3 gap-6">
+                            <div class="bg-white/70 rounded-xl p-4">
+                                <div class="text-sm text-gray-600 mb-1">Base Score</div>
+                                <div class="text-2xl font-bold text-gray-800">0-70 pts</div>
+                            </div>
+                            <div class="bg-white/70 rounded-xl p-4">
+                                <div class="text-sm text-gray-600 mb-1">Apply Deductions</div>
+                                <div class="text-2xl font-bold text-red-600">-15 / -35</div>
+                            </div>
+                            <div class="bg-white/70 rounded-xl p-4">
+                                <div class="text-sm text-gray-600 mb-1">Performance Band</div>
+                                <div class="text-2xl font-bold text-purple-600">5 Tiers</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Output -->
+                <div class="report-output rounded-2xl p-7 shadow-xl">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                            <span class="text-white text-3xl">📊</span>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-purple-800">HTML Report Output</h3>
+                            <p class="text-purple-600 text-sm font-semibold">Professional Quality Review Results</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-5 gap-3">
+                        <div class="bg-blue-100 text-blue-700 rounded-lg p-3 text-center border-2 border-blue-300">
+                            <div class="font-bold text-sm">BLUE</div>
+                            <div class="text-xs mt-1">95%+</div>
+                        </div>
+                        <div class="bg-green-100 text-green-700 rounded-lg p-3 text-center border-2 border-green-300">
+                            <div class="font-bold text-sm">GREEN</div>
+                            <div class="text-xs mt-1">90-94%</div>
+                        </div>
+                        <div class="bg-yellow-100 text-yellow-700 rounded-lg p-3 text-center border-2 border-yellow-300">
+                            <div class="font-bold text-sm">YELLOW</div>
+                            <div class="text-xs mt-1">75-89%</div>
+                        </div>
+                        <div class="bg-red-100 text-red-700 rounded-lg p-3 text-center border-2 border-red-300">
+                            <div class="font-bold text-sm">RED</div>
+                            <div class="text-xs mt-1">50-74%</div>
+                        </div>
+                        <div class="bg-purple-100 text-purple-700 rounded-lg p-3 text-center border-2 border-purple-300">
+                            <div class="font-bold text-sm">PURPLE</div>
+                            <div class="text-xs mt-1">0-49%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Handling Workflow -->
+        <div id="workflow-handling" class="workflow-section">
+            <div class="workflow-card p-10 glow-box">
+                <div class="text-center mb-10">
+                    <h2 class="text-4xl font-black section-header mb-3">Incident Handling Template</h2>
+                    <p class="text-xl text-gray-600 mb-4">Focus: Troubleshooting Quality & Resolution Excellence</p>
+                    <div class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-full border-2 border-indigo-200">
+                        <span class="text-indigo-700 font-bold text-lg">Maximum Score: 70 Points</span>
+                        <span class="text-indigo-400 text-2xl">•</span>
+                        <span class="text-green-600 font-bold text-lg">Pass Threshold: 90% (63 pts)</span>
+                    </div>
+                </div>
+
+                <!-- Input -->
+                <div class="flex justify-center mb-8">
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl pulse-glow">
+                        <span class="text-3xl mr-3">🎫</span> ServiceNow Ticket Input
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Parallel Processing -->
+                <div class="grid grid-cols-2 gap-10 my-10">
+                    <!-- Rules Engine -->
+                    <div class="rules-engine rounded-2xl p-7 shadow-xl">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                                <span class="text-white text-3xl">⚙️</span>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-black text-green-800">Rules Engine</h3>
+                                <p class="text-green-600 text-sm font-semibold">15 Points • Deterministic Checks</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-green-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Correct Priority</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">VIP (U1/I3), OWG (U2/I2) validation</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-green-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Interaction vs Incident</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Correct usage & linking verified</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-green-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Resolution Code</span>
+                                    <span class="criterion-badge bg-green-100 text-green-700">5 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Solved, Work Around, Routed</p>
+                            </div>
+                        </div>
+
+                        <!-- Deduction Checks -->
+                        <div class="mt-6 pt-6 border-t-2 border-green-300">
+                            <h4 class="font-black text-green-800 mb-3 text-lg">🚨 Critical Deductions</h4>
+                            <div class="deduction-box rounded-xl p-4 mb-3 shadow-md">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-red-700">Validation Failure</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-15 pts</span>
+                                </div>
+                                <p class="text-xs text-red-600">Not documented or OKTA not confirmed</p>
+                            </div>
+                            <div class="deduction-box rounded-xl p-4 shadow-md">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-red-700">Critical Process Failure</span>
+                                    <span class="criterion-badge bg-red-100 text-red-700">-35 / FAIL</span>
+                                </div>
+                                <p class="text-xs text-red-600">Password, VIP, Lost/Stolen, Security</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LLM Evaluator -->
+                    <div class="llm-engine rounded-2xl p-7 shadow-xl">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                <span class="text-white text-3xl">🤖</span>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-black text-amber-800">LLM Evaluator</h3>
+                                <p class="text-amber-600 text-sm font-semibold">55 Points • AI Quality Assessment</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Troubleshooting Quality</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Sufficient, documented, relevant</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Steps documented</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Screenshots</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Systematic</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Routing & Resolving</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">20 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600">FCR opportunities, correct routing</p>
+                            </div>
+
+                            <div class="bg-white/80 rounded-xl p-4 criterion-card border border-amber-200">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800">Resolution Notes</span>
+                                    <span class="criterion-badge bg-amber-100 text-amber-700">15 pts</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">Complete resolution documentation</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">What was done</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Issue resolved</span>
+                                    <span class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded">Close confirmed</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-white/60 rounded-xl p-4 border-2 border-amber-300">
+                            <h4 class="font-bold text-amber-800 mb-2">📊 AI Analysis Output</h4>
+                            <ul class="text-sm text-gray-700 space-y-1">
+                                <li>• Troubleshooting effectiveness score</li>
+                                <li>• Resolution completeness rating</li>
+                                <li>• Improvement recommendations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scoring Engine -->
+                <div class="connector-line"></div>
+                
+                <div class="scoring-engine rounded-2xl p-7 my-8 shadow-xl">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-black text-blue-800 mb-4">⚡ Scoring Engine</h3>
+                        <div class="grid grid-cols-3 gap-6">
+                            <div class="bg-white/70 rounded-xl p-4">
+                                <div class="text-sm text-gray-600 mb-1">Base Score</div>
+                                <div class="text-2xl font-bold text-gray-800">0-70 pts</div>
+                            </div>
+                            <div class="bg-white/70 rounded-xl p-4">
+                                <div class="text-sm text-gray-600 mb-1">Apply Deductions</div>
+                                <div class="text-2xl font-bold text-red-600">-15 / -35</div>
+                            </div>
+                            <div class="bg-white/70 rounded-xl p-4">
+                                <div class="text-sm text-gray-600 mb-1">Performance Band</div>
+                                <div class="text-2xl font-bold text-purple-600">5 Tiers</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector-line"></div>
+
+                <!-- Output -->
+                <div class="report-output rounded-2xl p-7 shadow-xl">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                            <span class="text-white text-3xl">📊</span>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-purple-800">HTML Report Output</h3>
+                            <p class="text-purple-600 text-sm font-semibold">Professional Quality Review Results</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-5 gap-3">
+                        <div class="bg-blue-100 text-blue-700 rounded-lg p-3 text-center border-2 border-blue-300">
+                            <div class="font-bold text-sm">BLUE</div>
+                            <div class="text-xs mt-1">95%+</div>
+                        </div>
+                        <div class="bg-green-100 text-green-700 rounded-lg p-3 text-center border-2 border-green-300">
+                            <div class="font-bold text-sm">GREEN</div>
+                            <div class="text-xs mt-1">90-94%</div>
+                        </div>
+                        <div class="bg-yellow-100 text-yellow-700 rounded-lg p-3 text-center border-2 border-yellow-300">
+                            <div class="font-bold text-sm">YELLOW</div>
+                            <div class="text-xs mt-1">75-89%</div>
+                        </div>
+                        <div class="bg-red-100 text-red-700 rounded-lg p-3 text-center border-2 border-red-300">
+                            <div class="font-bold text-sm">RED</div>
+                            <div class="text-xs mt-1">50-74%</div>
+                        </div>
+                        <div class="bg-purple-100 text-purple-700 rounded-lg p-3 text-center border-2 border-purple-300">
+                            <div class="font-bold text-sm">PURPLE</div>
+                            <div class="text-xs mt-1">0-49%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="text-center mt-12 text-white/60 text-sm">
+            <p>CTSS Ticket Quality Review System | AI-Powered Evaluation | 70-Point Scoring Scale</p>
+            <p class="mt-2">Pass Threshold: 63/70 points (90%) | Performance Bands: BLUE • GREEN • YELLOW • RED • PURPLE</p>
+        </div>
+    </div>
+
+    <script>
+        function showWorkflow(template) {
+            // Hide all workflows
+            document.querySelectorAll('.workflow-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.template-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected workflow
+            document.getElementById('workflow-' + template).classList.add('active');
+            
+            // Activate selected tab
+            document.getElementById('tab-' + template).classList.add('active');
+        }
+    </script>
+</body>
+</html>
