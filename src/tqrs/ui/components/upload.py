@@ -220,7 +220,7 @@ def _test_llm_connection(state) -> None:
                 )
 
             # Send a simple test message (include 'json' in prompt for Azure compatibility)
-            client.complete(
+            response = client.complete(
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant. Respond in JSON format."},
                     {"role": "user", "content": "Return a json object with a single key 'status' and value 'ok'."},
@@ -228,7 +228,7 @@ def _test_llm_connection(state) -> None:
                 response_format={"type": "json_object"},
             )
 
-            st.success("✅ Connection successful! API is responding.")
+            st.success(f"✅ Connection successful! API is responding.")
 
         except Exception as e:
             error_msg = str(e)
