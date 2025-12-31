@@ -19,7 +19,7 @@ switch ($Action) {
             Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
         }
 
-        $action = New-ScheduledTaskAction `
+        $taskAction = New-ScheduledTaskAction `
             -Execute $PythonPath `
             -Argument "-m streamlit run `"$AppPath`" --server.headless true --server.address 0.0.0.0 --server.port $Port" `
             -WorkingDirectory (Split-Path $AppPath -Parent | Split-Path -Parent | Split-Path -Parent)
@@ -28,7 +28,7 @@ switch ($Action) {
         $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
         $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 
-        Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings | Out-Null
+        Register-ScheduledTask -TaskName $TaskName -Action $taskAction -Trigger $trigger -Principal $principal -Settings $settings | Out-Null
 
         Write-Host "TQRS installed on port $Port" -ForegroundColor Green
         Write-Host "URL: http://$($env:COMPUTERNAME):$Port"
