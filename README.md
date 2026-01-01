@@ -15,18 +15,22 @@ AI-powered ServiceNow ticket quality review system that automates the evaluation
 
 ### 1. Install Dependencies
 
-```bash
+```powershell
 # Clone the repository
 git clone https://github.com/mmctech/IncidentReviews.git
 cd IncidentReviews
 
-# Install with pip
+# Create virtual environment
+python -m venv venv
+venv\Scripts\activate
+
+# Install dependencies
 pip install -e .
 ```
 
 ### 2. Run the Application
 
-```bash
+```powershell
 streamlit run src/tqrs/ui/app.py
 ```
 
@@ -35,23 +39,60 @@ streamlit run src/tqrs/ui/app.py
 1. Open http://localhost:8501 in your browser
 2. Upload a ServiceNow JSON export (or click "Load Sample Data")
 3. Select an evaluation template
-4. Enter your OpenAI API key
+4. Enter your OpenAI API key (or configure Azure OpenAI in sidebar)
 5. Click "Start Evaluation"
 6. View results and download reports
 
 ## Requirements
 
 - Python 3.11+
-- OpenAI API key (or Enterprise endpoint)
+- OpenAI API key or Azure OpenAI endpoint
 
 ## Installation
 
-### From Source
+### Development (Local)
 
-```bash
+```powershell
 git clone https://github.com/mmctech/IncidentReviews.git
 cd IncidentReviews
+python -m venv venv
+venv\Scripts\activate
 pip install -e .
+streamlit run src/tqrs/ui/app.py
+```
+
+### Windows Server Deployment
+
+Deploy as a Windows scheduled task that auto-starts on boot:
+
+```powershell
+# Clone to your preferred location (e.g., D:\incidentreviews)
+D:
+git clone https://github.com/mmctech/IncidentReviews.git incidentreviews
+cd incidentreviews
+
+# Create virtual environment
+python -m venv venv
+venv\Scripts\pip install -e .
+
+# Install as Windows service (run as Administrator)
+.\setup_service.ps1 -Port 8502
+```
+
+**Service Management:**
+
+```powershell
+.\manage_service.ps1 -Action status    # Check service status
+.\manage_service.ps1 -Action stop      # Stop service
+.\manage_service.ps1 -Action start     # Start service
+.\manage_service.ps1 -Action restart   # Restart service
+.\manage_service.ps1 -Action remove    # Uninstall service
+```
+
+**Custom Installation Path:**
+
+```powershell
+.\setup_service.ps1 -AppPath "E:\myapps\tqrs" -Port 8080
 ```
 
 ### Dependencies
@@ -65,37 +106,25 @@ Core dependencies are installed automatically:
 
 ## Configuration
 
-### OpenAI API Key
+All API configuration is done through the web interface sidebar.
 
-Enter your API key in the web interface sidebar, or set it via environment variable:
+### OpenAI
 
-```bash
-export OPENAI_API_KEY=your-api-key-here
-```
+1. Enter your API key in the sidebar
+2. Click "Start Evaluation"
 
-### Enterprise OpenAI / Azure OpenAI
+### Azure OpenAI
 
-For Enterprise endpoints, expand "Enterprise Settings" in the sidebar and enter your custom API Base URL:
+1. Expand "Enterprise Settings" in the sidebar
+2. Check "Use Azure OpenAI"
+3. Enter your Azure endpoint, deployment name, and API version
+4. Click "Start Evaluation"
 
-```
-https://your-endpoint.openai.azure.com/
-```
+### Enterprise OpenAI
 
-### Environment Variables
-
-Create a `.env` file (see `envexample`):
-
-```bash
-# Required
-OPENAI_API_KEY=your-api-key-here
-
-# Optional - Enterprise endpoint
-OPENAI_BASE_URL=https://your-enterprise-endpoint.openai.azure.com/
-
-# Optional - Model settings
-OPENAI_MODEL=gpt-4o
-OPENAI_TEMPERATURE=0.1
-```
+1. Expand "Enterprise Settings" in the sidebar
+2. Enter your custom API Base URL
+3. Click "Start Evaluation"
 
 ## Usage Guide
 
