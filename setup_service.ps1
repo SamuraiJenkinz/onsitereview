@@ -35,12 +35,6 @@ if (-not (Test-Path "$AppPath\venv\Scripts\python.exe")) {
     exit 1
 }
 
-# Check for .env file
-if (-not (Test-Path "$AppPath\.env")) {
-    Write-Host "WARNING: .env file not found at $AppPath" -ForegroundColor Yellow
-    Write-Host "Create .env with OPENAI_API_KEY if needed" -ForegroundColor Yellow
-    Write-Host ""
-}
 
 Write-Host "Configuration:" -ForegroundColor Green
 Write-Host "  App Path:   $AppPath"
