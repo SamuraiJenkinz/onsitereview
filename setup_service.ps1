@@ -42,6 +42,22 @@ Write-Host "  Port:       $Port"
 Write-Host "  Task Name:  $TaskName"
 Write-Host ""
 
+# Check if Azure OpenAI credentials are configured
+$azureEndpoint = [Environment]::GetEnvironmentVariable("TQRS_AZURE_OPENAI_ENDPOINT", "Machine")
+$azureApiKey = [Environment]::GetEnvironmentVariable("TQRS_AZURE_OPENAI_API_KEY", "Machine")
+$azureDeployment = [Environment]::GetEnvironmentVariable("TQRS_AZURE_OPENAI_DEPLOYMENT", "Machine")
+
+if ($azureEndpoint -and $azureApiKey -and $azureDeployment) {
+    Write-Host "Azure OpenAI: CONFIGURED" -ForegroundColor Green
+    Write-Host "  Credentials will be used automatically (hidden from users)" -ForegroundColor DarkGray
+} else {
+    Write-Host "Azure OpenAI: NOT CONFIGURED" -ForegroundColor Yellow
+    Write-Host "  Users will need to enter API credentials manually." -ForegroundColor DarkGray
+    Write-Host "  To configure server-side credentials, run:" -ForegroundColor DarkGray
+    Write-Host "    .\configure_credentials.ps1 -Endpoint <url> -ApiKey <key> -Deployment <name>" -ForegroundColor Cyan
+}
+Write-Host ""
+
 # Create startup batch script
 $batchScript = @"
 @echo off

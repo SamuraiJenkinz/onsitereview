@@ -5,6 +5,7 @@ from typing import Any
 
 import streamlit as st
 
+from tqrs.config import get_settings
 from tqrs.models.evaluation import (
     BatchEvaluationSummary,
     EvaluationResult,
@@ -32,7 +33,11 @@ class AppState:
     use_azure: bool = False
     azure_endpoint: str = ""
     azure_deployment: str = ""
-    azure_api_version: str = "2023-05-15"
+    azure_api_version: str = "2024-02-15-preview"
+
+    # Server-side credential configuration
+    # True when credentials are configured via environment variables
+    server_credentials_configured: bool = False
 
     # Processing state
     is_processing: bool = False
@@ -50,9 +55,29 @@ _INITIALIZED_KEY = "initialized"
 
 
 def init_state() -> None:
-    """Initialize session state with defaults."""
+    """Initialize session state with defaults.
+
+    If Azure OpenAI credentials are configured via environment variables
+    (TQRS_AZURE_OPENAI_*), the state is pre-populated with those values
+    and server_credentials_configured is set to True.
+    """
     if _INITIALIZED_KEY not in st.session_state:
-        st.session_state[_STATE_KEY] = AppState()
+        settings = get_settings()
+
+        # Check if server-side Azure credentials are configured
+        if settings.azure_credentials_configured:
+            # Pre-populate with env var values
+            st.session_state[_STATE_KEY] = AppState(
+                use_azure=True,
+                azure_endpoint=settings.azure_openai_endpoint or "",
+                azure_deployment=settings.azure_openai_deployment or "",
+                azure_api_version=settings.azure_openai_api_version,
+                api_key=settings.azure_openai_api_key or "",
+                server_credentials_configured=True,
+            )
+        else:
+            st.session_state[_STATE_KEY] = AppState()
+
         st.session_state[_INITIALIZED_KEY] = True
 
 

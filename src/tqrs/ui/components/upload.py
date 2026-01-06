@@ -95,19 +95,28 @@ def render_upload_section() -> None:
     # API Configuration
     st.subheader("🔑 API Configuration")
 
-    # Provider selection
-    provider = st.radio(
-        "API Provider",
-        options=["OpenAI", "Azure OpenAI"],
-        index=1 if state.use_azure else 0,
-        horizontal=True,
-        help="Select your AI provider",
-    )
-    use_azure = provider == "Azure OpenAI"
-    update_state(use_azure=use_azure)
+    # Check for admin mode via URL parameter (?admin=true)
+    admin_mode = st.query_params.get("admin", "").lower() == "true"
 
-    if use_azure:
-        # Azure OpenAI configuration
+    # Determine if we should show credential inputs
+    # Hide inputs when server credentials are configured AND not in admin mode
+    show_credential_inputs = not state.server_credentials_configured or admin_mode
+
+    if state.server_credentials_configured and not admin_mode:
+        # Server-configured credentials - hide inputs from regular users
+        st.success("✅ Using server-configured credentials")
+        st.caption("Azure OpenAI credentials are configured by your administrator.")
+        # Keep api_key reference for button state checks
+        api_key = state.api_key
+    elif state.server_credentials_configured and admin_mode:
+        # Admin override mode - show inputs pre-filled with env var values
+        st.warning("🔧 Admin Mode - Override Credentials")
+        st.caption("Changes apply to this session only. Environment variables remain unchanged.")
+
+        # Provider selection (locked to Azure since env vars are Azure)
+        st.info("Provider: Azure OpenAI (server-configured)")
+
+        # Azure OpenAI configuration (editable for admin)
         azure_endpoint = st.text_input(
             "Azure Endpoint",
             value=state.azure_endpoint,
@@ -140,24 +149,70 @@ def render_upload_section() -> None:
             )
             update_state(azure_api_version=azure_api_version)
     else:
-        # Standard OpenAI configuration
-        api_key = st.text_input(
-            "OpenAI API Key",
-            type="password",
-            value=state.api_key,
-            help="Enter your OpenAI API key for LLM-based evaluations",
+        # No server credentials - show full manual configuration UI
+        # Provider selection
+        provider = st.radio(
+            "API Provider",
+            options=["OpenAI", "Azure OpenAI"],
+            index=1 if state.use_azure else 0,
+            horizontal=True,
+            help="Select your AI provider",
         )
-        update_state(api_key=api_key)
+        use_azure = provider == "Azure OpenAI"
+        update_state(use_azure=use_azure)
 
-        # Enterprise endpoint (optional)
-        with st.expander("Enterprise Settings", expanded=bool(state.api_base_url)):
-            api_base_url = st.text_input(
-                "API Base URL (optional)",
-                value=state.api_base_url,
-                placeholder="https://your-enterprise-endpoint/v1",
-                help="For OpenAI Enterprise endpoints. Leave empty for standard OpenAI API.",
+        if use_azure:
+            # Azure OpenAI configuration
+            azure_endpoint = st.text_input(
+                "Azure Endpoint",
+                value=state.azure_endpoint,
+                placeholder="https://your-resource.openai.azure.com/",
+                help="Azure OpenAI endpoint URL (without /chat/completions)",
             )
-            update_state(api_base_url=api_base_url)
+            update_state(azure_endpoint=azure_endpoint)
+
+            azure_deployment = st.text_input(
+                "Deployment Name",
+                value=state.azure_deployment,
+                placeholder="gpt-4o-mini",
+                help="Azure OpenAI deployment name",
+            )
+            update_state(azure_deployment=azure_deployment)
+
+            api_key = st.text_input(
+                "API Key",
+                type="password",
+                value=state.api_key,
+                help="Azure OpenAI API key",
+            )
+            update_state(api_key=api_key)
+
+            with st.expander("Advanced Settings"):
+                azure_api_version = st.text_input(
+                    "API Version",
+                    value=state.azure_api_version,
+                    help="Azure OpenAI API version",
+                )
+                update_state(azure_api_version=azure_api_version)
+        else:
+            # Standard OpenAI configuration
+            api_key = st.text_input(
+                "OpenAI API Key",
+                type="password",
+                value=state.api_key,
+                help="Enter your OpenAI API key for LLM-based evaluations",
+            )
+            update_state(api_key=api_key)
+
+            # Enterprise endpoint (optional)
+            with st.expander("Enterprise Settings", expanded=bool(state.api_base_url)):
+                api_base_url = st.text_input(
+                    "API Base URL (optional)",
+                    value=state.api_base_url,
+                    placeholder="https://your-enterprise-endpoint/v1",
+                    help="For OpenAI Enterprise endpoints. Leave empty for standard OpenAI API.",
+                )
+                update_state(api_base_url=api_base_url)
 
     # Test Connection button
     st.divider()
@@ -190,7 +245,7 @@ def render_upload_section() -> None:
     # Help text
     if not has_data():
         st.info("👆 Upload a JSON file (batch) or PDF (single ticket) to get started")
-    elif not api_key:
+    elif not api_key and not state.server_credentials_configured:
         st.warning("⚠️ Enter your API key to enable evaluation")
 
 

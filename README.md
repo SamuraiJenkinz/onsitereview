@@ -75,9 +75,35 @@ cd incidentreviews
 python -m venv venv
 venv\Scripts\pip install -e .
 
+# Configure Azure OpenAI credentials (run as Administrator)
+.\configure_credentials.ps1 -Endpoint "https://your-resource.openai.azure.com/" -ApiKey "your-api-key" -Deployment "gpt-4o"
+
 # Install as Windows service (run as Administrator)
 .\setup_service.ps1 -Port 8502
 ```
+
+**Server-Side Credential Configuration:**
+
+Configure Azure OpenAI credentials as system environment variables. This hides credentials from end users - they'll see "Using server-configured credentials" instead of API key inputs.
+
+```powershell
+# Set credentials (requires Administrator)
+.\configure_credentials.ps1 -Endpoint "https://your-resource.openai.azure.com/" -ApiKey "your-api-key" -Deployment "gpt-4o"
+
+# Check current configuration
+.\configure_credentials.ps1 -Status
+
+# Remove credentials
+.\configure_credentials.ps1 -Clear
+```
+
+Environment variables used:
+- `TQRS_AZURE_OPENAI_ENDPOINT` - Azure OpenAI resource URL
+- `TQRS_AZURE_OPENAI_API_KEY` - API key
+- `TQRS_AZURE_OPENAI_DEPLOYMENT` - Model deployment name
+- `TQRS_AZURE_OPENAI_API_VERSION` - API version (optional)
+
+**Admin Override:** Access `http://server:port/?admin=true` to temporarily override server credentials for testing.
 
 **Service Management:**
 
@@ -106,25 +132,35 @@ Core dependencies are installed automatically:
 
 ## Configuration
 
-All API configuration is done through the web interface sidebar.
+### Server Deployment (Recommended)
 
-### OpenAI
+For Windows Server deployments, configure credentials via environment variables. This hides credentials from end users:
 
-1. Enter your API key in the sidebar
-2. Click "Start Evaluation"
+```powershell
+.\configure_credentials.ps1 -Endpoint "https://..." -ApiKey "..." -Deployment "gpt-4o"
+```
 
-### Azure OpenAI
+See [Windows Server Deployment](#windows-server-deployment) for details.
 
-1. Expand "Enterprise Settings" in the sidebar
-2. Check "Use Azure OpenAI"
-3. Enter your Azure endpoint, deployment name, and API version
-4. Click "Start Evaluation"
+### Manual Configuration (Development)
 
-### Enterprise OpenAI
+For local development, configure API settings through the web interface sidebar.
 
-1. Expand "Enterprise Settings" in the sidebar
-2. Enter your custom API Base URL
+**OpenAI:**
+1. Select "OpenAI" provider
+2. Enter your API key in the sidebar
 3. Click "Start Evaluation"
+
+**Azure OpenAI:**
+1. Select "Azure OpenAI" provider
+2. Enter your Azure endpoint, deployment name, and API key
+3. Click "Start Evaluation"
+
+**Enterprise OpenAI:**
+1. Select "OpenAI" provider
+2. Expand "Enterprise Settings"
+3. Enter your custom API Base URL
+4. Click "Start Evaluation"
 
 ## Usage Guide
 
