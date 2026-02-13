@@ -1,13 +1,13 @@
 # TQRS - Ticket Quality Review System
 
-AI-powered ServiceNow ticket quality review system that automates the evaluation of incident tickets using a hybrid rules + LLM approach.
+AI-powered ServiceNow ticket quality review system that automates the evaluation of onsite support incident tickets using a hybrid rules + LLM approach.
 
 ## Features
 
-- **Automated Scoring**: 70-point evaluation across multiple criteria
-- **Two Templates**: Incident Logging and Incident Handling
+- **Automated Scoring**: 90-point evaluation across 8 criteria (Onsite Support Review)
 - **AI-Powered Analysis**: OpenAI GPT-4o for nuanced quality assessment
 - **Professional Reports**: HTML reports with score gauges and coaching recommendations
+- **Path to Passing**: Actionable recommendations for failing tickets
 - **Batch Processing**: Evaluate hundreds of tickets with progress tracking
 - **Analytics Dashboard**: Score distributions, pass rates, common issues
 
@@ -17,8 +17,8 @@ AI-powered ServiceNow ticket quality review system that automates the evaluation
 
 ```powershell
 # Clone the repository
-git clone https://github.com/mmctech/IncidentReviews.git
-cd IncidentReviews
+git clone https://github.com/SamuraiJenkinz/onsitereview.git
+cd onsitereview
 
 # Create virtual environment
 python -m venv venv
@@ -38,10 +38,9 @@ streamlit run src/tqrs/ui/app.py
 
 1. Open http://localhost:8501 in your browser
 2. Upload a ServiceNow JSON export (or click "Load Sample Data")
-3. Select an evaluation template
-4. Enter your OpenAI API key (or configure Azure OpenAI in sidebar)
-5. Click "Start Evaluation"
-6. View results and download reports
+3. Enter your OpenAI API key (or configure Azure OpenAI in sidebar)
+4. Click "Start Evaluation"
+5. View results and download reports
 
 ## Requirements
 
@@ -53,8 +52,8 @@ streamlit run src/tqrs/ui/app.py
 ### Development (Local)
 
 ```powershell
-git clone https://github.com/mmctech/IncidentReviews.git
-cd IncidentReviews
+git clone https://github.com/SamuraiJenkinz/onsitereview.git
+cd onsitereview
 python -m venv venv
 venv\Scripts\activate
 pip install -e .
@@ -66,10 +65,10 @@ streamlit run src/tqrs/ui/app.py
 Deploy as a Windows scheduled task that auto-starts on boot:
 
 ```powershell
-# Clone to your preferred location (e.g., D:\incidentreviews)
+# Clone to your preferred location (e.g., D:\onsitereview)
 D:
-git clone https://github.com/mmctech/IncidentReviews.git incidentreviews
-cd incidentreviews
+git clone https://github.com/SamuraiJenkinz/onsitereview.git
+cd onsitereview
 
 # Create virtual environment
 python -m venv venv
@@ -184,31 +183,29 @@ The system accepts ServiceNow JSON exports with this structure:
 }
 ```
 
-### Evaluation Templates
-
-| Template | Focus | Key Criteria |
-|----------|-------|--------------|
-| **Incident Logging** | Documentation quality | Category, description, short description format |
-| **Incident Handling** | Resolution process | Troubleshooting, routing, resolution notes |
-
-> **Note:** Customer Service template has been disabled. Its criteria (greeting, closing message, interaction quality) require phone/chat transcript data from systems like Five9, which is not captured in ServiceNow incident records.
-
 ### Scoring
 
-- **Maximum Score**: 70 points
-- **Pass Threshold**: 63 points (90%)
+**Onsite Support Review** - Single unified template, 90 points across 8 criteria:
+
+| # | Criterion | Points | Method |
+|---|-----------|--------|--------|
+| 1 | Category | 5 | LLM |
+| 2 | Subcategory | 5 | LLM |
+| 3 | Service | 5 | LLM |
+| 4 | Configuration Item | 10 | LLM |
+| 5 | Opened For | 10 | Rules |
+| 6 | Incident Notes | 20 | LLM |
+| 7 | Incident Handling | 15 | LLM |
+| 8 | Resolution Notes | 20 | LLM |
+
+- **Maximum Score**: 90 points
+- **Pass Threshold**: 81 points (90%)
 - **Performance Bands**:
   - BLUE: 95%+ (Exceptional)
   - GREEN: 90-94% (Pass)
   - YELLOW: 75-89% (Needs Improvement)
   - RED: 50-74% (Below Standard)
   - PURPLE: <50% (Critical)
-
-### Deductions
-
-- **Validation**: -15 points if not properly documented
-- **Critical Process**: -35 points for process violations
-- **Auto-Fail**: Password process violations result in automatic failure
 
 ### Exporting Results
 
@@ -224,9 +221,9 @@ From the Export tab:
 src/tqrs/
 ├── models/          # Pydantic data models
 ├── parser/          # ServiceNow JSON parser
-├── rules/           # Deterministic rule evaluators
-├── llm/             # OpenAI LLM integration
-├── scoring/         # Score calculation engine
+├── rules/           # Deterministic rule evaluators (Opened For check)
+├── llm/             # OpenAI LLM integration (7 criteria)
+├── scoring/         # Score calculation engine (90 points)
 ├── reports/         # HTML report generation
 └── ui/              # Streamlit web interface
 ```
@@ -249,6 +246,12 @@ ruff format src/
 ## License
 
 MIT License
+
+## Documentation
+
+- [User Guide](docs/USER_GUIDE.md) - Complete guide for using TQRS
+- [ServiceNow Export Guide](docs/servicenow_export_guide.md) - How to export tickets from ServiceNow
+- [Workflow Charts](docs/workflow_charts.html) - Visual evaluation process diagrams
 
 ## Support
 
