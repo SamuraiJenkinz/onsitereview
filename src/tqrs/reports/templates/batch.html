@@ -49,7 +49,7 @@
                 <div class="text-gray-600">Failed</div>
             </div>
             <div class="bg-white rounded-lg shadow-lg p-6">
-                <div class="text-3xl font-bold text-gray-600">{{ "%.1f"|format(average_score) }}/70</div>
+                <div class="text-3xl font-bold text-gray-600">{{ "%.1f"|format(average_score) }}/90</div>
                 <div class="text-gray-600">Avg Score</div>
             </div>
         </div>
@@ -111,9 +111,6 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Deductions
-                            </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -141,11 +138,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                {% if result.auto_fail %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                    AUTO-FAIL
-                                </span>
-                                {% elif result.passed %}
+                                {% if result.passed %}
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                     PASS
                                 </span>
@@ -153,17 +146,6 @@
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                     FAIL
                                 </span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {% if result.validation_deduction != 0 %}
-                                <span class="text-orange-600">Val: {{ result.validation_deduction }}</span>
-                                {% endif %}
-                                {% if result.critical_process_deduction != 0 %}
-                                <span class="text-red-600 ml-2">CP: {{ result.critical_process_deduction }}</span>
-                                {% endif %}
-                                {% if result.validation_deduction == 0 and result.critical_process_deduction == 0 %}
-                                <span class="text-gray-400">None</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -206,17 +188,13 @@
                             <span class="text-gray-600">Average Time per Ticket</span>
                             <span class="font-medium">{{ "%.1f"|format(total_time_seconds / total_tickets if total_tickets > 0 else 0) }} seconds</span>
                         </div>
-                        <div class="flex justify-between py-2 border-b border-gray-100">
-                            <span class="text-gray-600">Auto-Fail Count</span>
-                            <span class="font-medium">{{ auto_fail_count }}</span>
-                        </div>
                         <div class="flex justify-between py-2">
                             <span class="text-gray-600">Highest Score</span>
-                            <span class="font-medium text-green-600">{{ highest_score }}/70</span>
+                            <span class="font-medium text-green-600">{{ highest_score }}/90</span>
                         </div>
                         <div class="flex justify-between py-2">
                             <span class="text-gray-600">Lowest Score</span>
-                            <span class="font-medium text-red-600">{{ lowest_score }}/70</span>
+                            <span class="font-medium text-red-600">{{ lowest_score }}/90</span>
                         </div>
                     </div>
                 </div>
@@ -238,16 +216,16 @@
         type: 'histogram',
         marker: {
             color: scores.map(s => {
-                if (s >= 66.5) return '#3B82F6';  // Blue
-                if (s >= 63) return '#22C55E';    // Green
-                if (s >= 52.5) return '#EAB308';  // Yellow
-                if (s >= 35) return '#EF4444';    // Red
-                return '#A855F7';                  // Purple
+                if (s >= 85.5) return '#3B82F6';  // Blue (95%+)
+                if (s >= 81) return '#22C55E';    // Green (90%+)
+                if (s >= 67.5) return '#EAB308';  // Yellow (75%+)
+                if (s >= 45) return '#EF4444';    // Red (50%+)
+                return '#A855F7';                  // Purple (<50%)
             })
         },
         xbins: {
             start: 0,
-            end: 70,
+            end: 90,
             size: 5
         }
     }];
@@ -255,15 +233,15 @@
     var histogramLayout = {
         xaxis: {
             title: 'Score',
-            range: [0, 70],
+            range: [0, 90],
             dtick: 10
         },
         yaxis: { title: 'Count' },
         bargap: 0.1,
         shapes: [{
             type: 'line',
-            x0: 63,
-            x1: 63,
+            x0: 81,
+            x1: 81,
             y0: 0,
             y1: 1,
             yref: 'paper',
@@ -274,7 +252,7 @@
             }
         }],
         annotations: [{
-            x: 63,
+            x: 81,
             y: 1,
             yref: 'paper',
             text: 'Pass (90%)',

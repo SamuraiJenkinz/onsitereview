@@ -48,7 +48,7 @@ def render_ticket_details(result: EvaluationResult) -> None:
     render_score_card(result)
 
     # Tabs for different sections - include Path to Passing for failing tickets
-    if not result.passed and not result.auto_fail:
+    if not result.passed:
         tab1, tab2, tab3, tab4 = st.tabs([
             "🎯 Path to Passing",
             "📊 Scores",
@@ -106,22 +106,7 @@ def render_score_card(result: EvaluationResult) -> None:
 
     with col4:
         status = "✅ PASS" if result.passed else "❌ FAIL"
-        if result.auto_fail:
-            status = "🚫 AUTO-FAIL"
         st.metric("Status", status)
-
-    # Auto-fail reason if applicable
-    if result.auto_fail and result.auto_fail_reason:
-        st.error(f"**Auto-Fail Reason:** {result.auto_fail_reason}")
-
-    # Deductions if any
-    if result.total_deductions > 0:
-        deductions = []
-        if result.validation_deduction:
-            deductions.append(f"Validation: {result.validation_deduction}")
-        if result.critical_process_deduction:
-            deductions.append(f"Critical Process: {result.critical_process_deduction}")
-        st.warning(f"**Deductions Applied:** {', '.join(deductions)}")
 
 
 def render_path_to_passing(result: EvaluationResult) -> None:
@@ -134,8 +119,6 @@ def render_path_to_passing(result: EvaluationResult) -> None:
         criterion_scores=result.criterion_scores,
         total_score=result.total_score,
         max_score=result.max_score,
-        validation_deduction=result.validation_deduction,
-        critical_process_deduction=result.critical_process_deduction,
     )
 
     if not recommendations:

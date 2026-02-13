@@ -8,8 +8,6 @@ from dataclasses import dataclass, field
 
 from tqrs.llm.client import LLMError, OpenAIClient, TokenUsage
 from tqrs.llm.evaluator import LLMEvaluator
-from tqrs.llm.schemas import LLMEvaluationResponse
-from tqrs.models.evaluation import TemplateType
 from tqrs.models.ticket import ServiceNowTicket
 from tqrs.rules.base import RuleResult
 
@@ -55,7 +53,6 @@ class TicketEvaluationResult:
     ticket_number: str
     success: bool
     rule_results: list[RuleResult] = field(default_factory=list)
-    full_evaluation: LLMEvaluationResponse | None = None
     error: str | None = None
     evaluation_time_seconds: float = 0.0
 
@@ -87,12 +84,6 @@ class BatchLLMEvaluator:
         client: OpenAIClient,
         concurrency: int = 5,
     ):
-        """Initialize batch evaluator.
-
-        Args:
-            client: Configured OpenAI client
-            concurrency: Maximum concurrent evaluations (default: 5)
-        """
         self.client = client
         self.evaluator = LLMEvaluator(client)
         self.concurrency = concurrency
@@ -100,17 +91,13 @@ class BatchLLMEvaluator:
     def evaluate_batch(
         self,
         tickets: list[ServiceNowTicket],
-        template: TemplateType,
         progress_callback: Callable[[BatchProgress], None] | None = None,
-        include_full_evaluation: bool = False,
     ) -> BatchResult:
         """Evaluate multiple tickets with rate limiting.
 
         Args:
             tickets: List of tickets to evaluate
-            template: Template type for evaluation
             progress_callback: Optional callback for progress updates
-            include_full_evaluation: Include detailed LLMEvaluationResponse
 
         Returns:
             BatchResult with all evaluation results
@@ -130,17 +117,12 @@ class BatchLLMEvaluator:
             ticket_start = time.time()
 
             try:
-                rule_results = self.evaluator.evaluate_ticket(ticket, template)
-                full_eval = None
-
-                if include_full_evaluation:
-                    full_eval = self.evaluator.get_full_evaluation(ticket, template)
+                rule_results = self.evaluator.evaluate_ticket(ticket)
 
                 results.append(TicketEvaluationResult(
                     ticket_number=ticket.number,
                     success=True,
                     rule_results=rule_results,
-                    full_evaluation=full_eval,
                     evaluation_time_seconds=time.time() - ticket_start,
                 ))
                 progress.completed += 1
@@ -181,17 +163,13 @@ class BatchLLMEvaluator:
     async def evaluate_batch_async(
         self,
         tickets: list[ServiceNowTicket],
-        template: TemplateType,
         progress_callback: Callable[[BatchProgress], None] | None = None,
-        include_full_evaluation: bool = False,
     ) -> BatchResult:
         """Evaluate multiple tickets concurrently.
 
         Args:
             tickets: List of tickets to evaluate
-            template: Template type for evaluation
             progress_callback: Optional callback for progress updates
-            include_full_evaluation: Include detailed LLMEvaluationResponse
 
         Returns:
             BatchResult with all evaluation results
@@ -207,23 +185,12 @@ class BatchLLMEvaluator:
                 ticket_start = time.time()
 
                 try:
-                    # Run synchronous evaluation in executor
                     loop = asyncio.get_event_loop()
                     rule_results = await loop.run_in_executor(
                         None,
                         self.evaluator.evaluate_ticket,
                         ticket,
-                        template,
                     )
-
-                    full_eval = None
-                    if include_full_evaluation:
-                        full_eval = await loop.run_in_executor(
-                            None,
-                            self.evaluator.get_full_evaluation,
-                            ticket,
-                            template,
-                        )
 
                     progress.completed += 1
                     progress.current_ticket = ticket.number
@@ -235,7 +202,6 @@ class BatchLLMEvaluator:
                         ticket_number=ticket.number,
                         success=True,
                         rule_results=rule_results,
-                        full_evaluation=full_eval,
                         evaluation_time_seconds=time.time() - ticket_start,
                     )
 
@@ -282,13 +248,11 @@ class BatchLLMEvaluator:
     def evaluate_single(
         self,
         ticket: ServiceNowTicket,
-        template: TemplateType,
     ) -> TicketEvaluationResult:
         """Evaluate a single ticket.
 
         Args:
             ticket: Ticket to evaluate
-            template: Template type for evaluation
 
         Returns:
             TicketEvaluationResult
@@ -296,14 +260,12 @@ class BatchLLMEvaluator:
         start_time = time.time()
 
         try:
-            rule_results = self.evaluator.evaluate_ticket(ticket, template)
-            full_eval = self.evaluator.get_full_evaluation(ticket, template)
+            rule_results = self.evaluator.evaluate_ticket(ticket)
 
             return TicketEvaluationResult(
                 ticket_number=ticket.number,
                 success=True,
                 rule_results=rule_results,
-                full_evaluation=full_eval,
                 evaluation_time_seconds=time.time() - start_time,
             )
 

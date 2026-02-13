@@ -1,4 +1,4 @@
-"""Batch ticket evaluation for TQRS."""
+"""Batch ticket evaluation for TQRS - Onsite Support Review."""
 
 import asyncio
 import logging
@@ -12,7 +12,6 @@ from tqrs.models.evaluation import (
     BatchEvaluationSummary,
     EvaluationResult,
     PerformanceBand,
-    TemplateType,
 )
 from tqrs.models.ticket import ServiceNowTicket
 from tqrs.scoring.evaluator import TicketEvaluator
@@ -32,19 +31,16 @@ class BatchProgress:
 
     @property
     def percentage(self) -> float:
-        """Calculate completion percentage."""
         if self.total == 0:
             return 100.0
         return round((self.completed / self.total) * 100, 1)
 
     @property
     def elapsed_seconds(self) -> float:
-        """Calculate elapsed time in seconds."""
         return time.time() - self.start_time
 
     @property
     def estimated_remaining_seconds(self) -> float:
-        """Estimate remaining time based on current pace."""
         if self.completed == 0:
             return 0.0
         avg_time = self.elapsed_seconds / self.completed
@@ -70,31 +66,15 @@ class BatchTicketEvaluator:
         evaluator: TicketEvaluator,
         concurrency: int = 5,
     ):
-        """Initialize batch evaluator.
-
-        Args:
-            evaluator: Ticket evaluator instance
-            concurrency: Maximum concurrent evaluations (for async mode)
-        """
         self.evaluator = evaluator
         self.concurrency = concurrency
 
     def evaluate_batch(
         self,
         tickets: list[ServiceNowTicket],
-        template: TemplateType,
         progress_callback: Callable[[BatchProgress], None] | None = None,
     ) -> BatchResult:
-        """Evaluate a batch of tickets sequentially.
-
-        Args:
-            tickets: List of tickets to evaluate
-            template: Template type for evaluation
-            progress_callback: Optional callback for progress updates
-
-        Returns:
-            BatchResult with all evaluations and summary
-        """
+        """Evaluate a batch of tickets sequentially."""
         start_time = time.time()
         results: list[EvaluationResult] = []
         errors: list[tuple[str, str]] = []
@@ -108,7 +88,7 @@ class BatchTicketEvaluator:
                 progress_callback(progress)
 
             try:
-                result = self.evaluator.evaluate_ticket(ticket, template)
+                result = self.evaluator.evaluate_ticket(ticket)
                 results.append(result)
             except Exception as e:
                 logger.error(f"Error evaluating {ticket.number}: {e}")
@@ -117,7 +97,6 @@ class BatchTicketEvaluator:
 
             progress.completed += 1
 
-        # Final progress update
         progress.current_ticket = None
         if progress_callback:
             progress_callback(progress)
@@ -136,19 +115,9 @@ class BatchTicketEvaluator:
     async def evaluate_batch_async(
         self,
         tickets: list[ServiceNowTicket],
-        template: TemplateType,
         progress_callback: Callable[[BatchProgress], None] | None = None,
     ) -> BatchResult:
-        """Evaluate a batch of tickets with concurrency.
-
-        Args:
-            tickets: List of tickets to evaluate
-            template: Template type for evaluation
-            progress_callback: Optional callback for progress updates
-
-        Returns:
-            BatchResult with all evaluations and summary
-        """
+        """Evaluate a batch of tickets with concurrency."""
         start_time = time.time()
         semaphore = asyncio.Semaphore(self.concurrency)
 
@@ -161,10 +130,9 @@ class BatchTicketEvaluator:
             nonlocal progress
             async with semaphore:
                 try:
-                    # Run sync evaluation in thread pool
                     result = await asyncio.get_event_loop().run_in_executor(
                         None,
-                        lambda: self.evaluator.evaluate_ticket(ticket, template),
+                        lambda: self.evaluator.evaluate_ticket(ticket),
                     )
                     async with lock:
                         results.append(result)
@@ -180,10 +148,8 @@ class BatchTicketEvaluator:
                         if progress_callback:
                             progress_callback(progress)
 
-        # Run all evaluations
         await asyncio.gather(*[evaluate_one(t) for t in tickets])
 
-        # Final progress update
         progress.current_ticket = None
         if progress_callback:
             progress_callback(progress)
@@ -203,20 +169,12 @@ class BatchTicketEvaluator:
         self,
         results: list[EvaluationResult],
     ) -> BatchEvaluationSummary:
-        """Generate summary statistics from evaluation results.
-
-        Args:
-            results: List of evaluation results
-
-        Returns:
-            Summary statistics for the batch
-        """
+        """Generate summary statistics from evaluation results."""
         if not results:
             return BatchEvaluationSummary(
                 total_tickets=0,
                 passed_count=0,
                 failed_count=0,
-                auto_fail_count=0,
                 average_score=0.0,
                 average_percentage=0.0,
                 band_distribution={},
@@ -224,17 +182,13 @@ class BatchTicketEvaluator:
                 evaluated_at=datetime.now(),
             )
 
-        # Calculate counts
         total = len(results)
         passed = sum(1 for r in results if r.passed)
         failed = total - passed
-        auto_fails = sum(1 for r in results if r.auto_fail)
 
-        # Calculate averages
         avg_score = sum(r.total_score for r in results) / total
         avg_percentage = sum(r.percentage for r in results) / total
 
-        # Band distribution
         band_counts: Counter[str] = Counter()
         for result in results:
             band_counts[result.band.value] += 1
@@ -244,11 +198,9 @@ class BatchTicketEvaluator:
             for band in PerformanceBand
         }
 
-        # Common issues (most frequent improvement areas)
         issue_counts: Counter[str] = Counter()
         for result in results:
             for improvement in result.improvements:
-                # Extract criterion name from improvement text
                 if ": " in improvement:
                     criterion = improvement.split(": ")[0]
                     issue_counts[criterion] += 1
@@ -261,7 +213,6 @@ class BatchTicketEvaluator:
             total_tickets=total,
             passed_count=passed,
             failed_count=failed,
-            auto_fail_count=auto_fails,
             average_score=round(avg_score, 1),
             average_percentage=round(avg_percentage, 1),
             band_distribution=band_distribution,
@@ -272,29 +223,13 @@ class BatchTicketEvaluator:
 
 def evaluate_tickets(
     tickets: list[ServiceNowTicket],
-    template: TemplateType,
     api_key: str,
     base_url: str | None = None,
     model: str = "gpt-4o",
     concurrency: int = 5,
     progress_callback: Callable[[BatchProgress], None] | None = None,
 ) -> BatchResult:
-    """High-level API for batch ticket evaluation.
-
-    Convenience function that creates evaluators and runs batch processing.
-
-    Args:
-        tickets: List of tickets to evaluate
-        template: Template type for evaluation
-        api_key: OpenAI API key
-        base_url: Optional custom API base URL
-        model: Model to use for LLM evaluation
-        concurrency: Maximum concurrent evaluations
-        progress_callback: Optional callback for progress updates
-
-    Returns:
-        BatchResult with all evaluations and summary
-    """
+    """High-level API for batch ticket evaluation."""
     evaluator = TicketEvaluator.create(
         api_key=api_key,
         base_url=base_url,
@@ -308,36 +243,19 @@ def evaluate_tickets(
 
     return batch_evaluator.evaluate_batch(
         tickets=tickets,
-        template=template,
         progress_callback=progress_callback,
     )
 
 
 async def evaluate_tickets_async(
     tickets: list[ServiceNowTicket],
-    template: TemplateType,
     api_key: str,
     base_url: str | None = None,
     model: str = "gpt-4o",
     concurrency: int = 5,
     progress_callback: Callable[[BatchProgress], None] | None = None,
 ) -> BatchResult:
-    """High-level async API for batch ticket evaluation.
-
-    Convenience function that creates evaluators and runs concurrent batch processing.
-
-    Args:
-        tickets: List of tickets to evaluate
-        template: Template type for evaluation
-        api_key: OpenAI API key
-        base_url: Optional custom API base URL
-        model: Model to use for LLM evaluation
-        concurrency: Maximum concurrent evaluations
-        progress_callback: Optional callback for progress updates
-
-    Returns:
-        BatchResult with all evaluations and summary
-    """
+    """High-level async API for batch ticket evaluation."""
     evaluator = TicketEvaluator.create(
         api_key=api_key,
         base_url=base_url,
@@ -351,6 +269,5 @@ async def evaluate_tickets_async(
 
     return await batch_evaluator.evaluate_batch_async(
         tickets=tickets,
-        template=template,
         progress_callback=progress_callback,
     )

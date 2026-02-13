@@ -207,11 +207,10 @@ class TestTicketStatus:
         for ticket in sample_tickets:
             assert ticket.is_resolved is True
 
-    def test_has_validation(self, sample_tickets: list[ServiceNowTicket]):
-        """Sample tickets should have validation documented."""
+    def test_opened_for_parsed(self, sample_tickets: list[ServiceNowTicket]):
+        """Sample tickets should have opened_for field parsed."""
         for ticket in sample_tickets:
-            # All samples mention validation in description
-            assert ticket.has_validation is True
+            assert isinstance(ticket.opened_for, str)
 
 
 class TestDatetimeParsing:

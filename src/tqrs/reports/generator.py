@@ -30,9 +30,7 @@ class ReportGenerator:
 
     # Template display names
     TEMPLATE_NAMES = {
-        TemplateType.INCIDENT_LOGGING: "Incident Logging",
-        TemplateType.INCIDENT_HANDLING: "Incident Handling",
-        TemplateType.CUSTOMER_SERVICE: "Customer Service",
+        TemplateType.ONSITE_REVIEW: "Onsite Support Review",
     }
 
     def __init__(self, template_dir: Path | None = None) -> None:
@@ -81,22 +79,6 @@ class ReportGenerator:
             })
         return criteria_data
 
-    def _get_validation_status(self, result: EvaluationResult) -> str:
-        """Get human-readable validation status."""
-        if result.validation_deduction == 0:
-            return "PASS - Validation properly documented"
-        if result.validation_deduction == -15:
-            return "Validated but not properly documented (-15 pts)"
-        return "FAIL - Validation not performed"
-
-    def _get_critical_process_status(self, result: EvaluationResult) -> str:
-        """Get human-readable critical process status."""
-        if result.critical_process_deduction == 0:
-            return "N/A or PASS"
-        if result.critical_process_deduction == -35:
-            return "Critical process violation (-35 pts)"
-        return "FAIL - Critical process failure"
-
     def generate_individual_report(
         self,
         result: EvaluationResult,
@@ -115,14 +97,12 @@ class ReportGenerator:
 
         # Generate path to passing recommendations for failing tickets
         path_to_passing = []
-        if not result.passed and not result.auto_fail:
+        if not result.passed:
             formatter = ResultFormatter()
             path_to_passing = formatter.generate_path_to_passing(
                 criterion_scores=result.criterion_scores,
                 total_score=result.total_score,
                 max_score=result.max_score,
-                validation_deduction=result.validation_deduction,
-                critical_process_deduction=result.critical_process_deduction,
             )
 
         context = {
@@ -143,14 +123,6 @@ class ReportGenerator:
             "band": result.band.display_name,
             "band_color": self._get_band_color(result.band),
             "passed": result.passed,
-            # Auto-fail
-            "auto_fail": result.auto_fail,
-            "auto_fail_reason": result.auto_fail_reason,
-            # Deductions
-            "validation_deduction": result.validation_deduction,
-            "validation_status": self._get_validation_status(result),
-            "critical_process_deduction": result.critical_process_deduction,
-            "critical_process_status": self._get_critical_process_status(result),
             # Criterion breakdown
             "criterion_scores": self._prepare_criterion_data(result),
             # Path to Passing (credit score style recommendations)
@@ -169,14 +141,12 @@ class ReportGenerator:
         self,
         results: list[EvaluationResult],
         summary: BatchEvaluationSummary,
-        template_type: TemplateType | None = None,
     ) -> str:
         """Generate HTML summary report for a batch of evaluations.
 
         Args:
             results: List of evaluation results.
             summary: Batch summary statistics.
-            template_type: Template used for evaluation.
 
         Returns:
             HTML string of the batch report.
@@ -196,9 +166,6 @@ class ReportGenerator:
                 "band": r.band.display_name,
                 "band_color": self._get_band_color(r.band),
                 "passed": r.passed,
-                "auto_fail": r.auto_fail,
-                "validation_deduction": r.validation_deduction,
-                "critical_process_deduction": r.critical_process_deduction,
             })
 
         # Prepare band distribution data for charts
@@ -222,12 +189,10 @@ class ReportGenerator:
         avg_band = PerformanceBand.from_percentage(summary.average_percentage)
 
         # Template name
-        if template_type:
-            template_name = self._get_template_name(template_type)
-        elif results:
+        if results:
             template_name = self._get_template_name(results[0].template)
         else:
-            template_name = "Unknown"
+            template_name = "Onsite Support Review"
 
         context = {
             # Header
@@ -237,7 +202,6 @@ class ReportGenerator:
             "total_tickets": summary.total_tickets,
             "passed_count": summary.passed_count,
             "failed_count": summary.failed_count,
-            "auto_fail_count": summary.auto_fail_count,
             "average_score": summary.average_score,
             "average_percentage": round(summary.average_percentage, 1),
             "average_band_color": self._get_band_color(avg_band),
@@ -299,7 +263,6 @@ class ReportGenerator:
         results: list[EvaluationResult],
         summary: BatchEvaluationSummary,
         output_path: Path,
-        template_type: TemplateType | None = None,
     ) -> Path:
         """Generate and save batch summary report.
 
@@ -307,11 +270,10 @@ class ReportGenerator:
             results: List of evaluation results.
             summary: Batch summary statistics.
             output_path: Output file path.
-            template_type: Template used for evaluation.
 
         Returns:
             Path to saved report.
         """
-        html = self.generate_batch_report(results, summary, template_type)
+        html = self.generate_batch_report(results, summary)
         self.save_report(html, output_path)
         return output_path

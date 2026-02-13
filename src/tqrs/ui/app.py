@@ -89,27 +89,31 @@ def render_welcome_view() -> None:
     st.markdown(
         """
         Welcome to the **Ticket Quality Review System** - an AI-powered tool for
-        evaluating ServiceNow ticket quality.
+        evaluating onsite support ServiceNow ticket quality.
 
         ### Getting Started
 
         1. **Upload** a ServiceNow JSON export (or PDF for single tickets) using the sidebar
-        2. **Select** an evaluation template (Logging or Handling)
-        3. **Configure** your OpenAI API key
-        4. **Start** the evaluation and watch the progress
-        5. **Review** results and coaching recommendations
+        2. **Configure** your OpenAI API key
+        3. **Start** the evaluation and watch the progress
+        4. **Review** results and coaching recommendations
 
-        ### Evaluation Templates
+        ### Scoring (Onsite Support Review)
 
-        | Template | Focus Area | Key Criteria |
-        |----------|------------|--------------|
-        | **Incident Logging** | Documentation quality | Category, description, short description format |
-        | **Incident Handling** | Resolution process | Troubleshooting, routing, resolution notes |
+        8 criteria across **90 points** maximum per ticket:
 
-        ### Scoring
+        | Criterion | Points | Source |
+        |-----------|--------|--------|
+        | Category | 5 | LLM |
+        | Subcategory | 5 | LLM |
+        | Service | 5 | LLM |
+        | Configuration Item | 10 | LLM |
+        | Opened For | 10 | Rules |
+        | Incident Notes | 20 | LLM |
+        | Incident Handling | 15 | LLM |
+        | Resolution Notes | 20 | LLM |
 
-        - **70 points** maximum per ticket
-        - **90%** (63 points) required to pass
+        - **90%** (81 points) required to pass
         - Performance bands: 🔵 Blue (95%+), 🟢 Green (90%+), 🟡 Yellow (75%+), 🔴 Red (50%+), 🟣 Purple (<50%)
         """
     )
@@ -139,7 +143,7 @@ def render_data_loaded_view() -> None:
             ### Data Summary
 
             - **Tickets loaded:** {len(state.tickets)}
-            - **Template:** {state.template.value.replace('_', ' ').title()}
+            - **Template:** Onsite Support Review (90 points)
             - **API configured:** {'✅ Yes' if state.api_key else '❌ No'}
 
             Click **Start Evaluation** in the sidebar to begin processing.
@@ -167,7 +171,7 @@ def render_main_content() -> None:
         with col1:
             st.metric("Pass Rate", f"{state.summary.pass_rate:.1f}%")
         with col2:
-            st.metric("Average Score", f"{state.summary.average_score:.1f}/70")
+            st.metric("Average Score", f"{state.summary.average_score:.1f}/90")
         with col3:
             st.metric(
                 "Evaluation Time",
@@ -244,7 +248,6 @@ def render_export_section() -> None:
             batch_html = generator.generate_batch_report(
                 results=results,
                 summary=state.summary,
-                template_type=state.template,
             )
             st.download_button(
                 "⬇️ Download Batch Report",
@@ -277,12 +280,7 @@ def render_export_section() -> None:
                     result=result,
                     ticket=ticket,
                 )
-                # Template abbreviation for filename
-                template_abbrev = {
-                    "incident_logging": "il",
-                    "incident_handling": "ih",
-                    "customer_service": "cs",
-                }.get(state.template.value, "review")
+                template_abbrev = "osr"  # Onsite Support Review
 
                 st.download_button(
                     f"⬇️ Download {selected_ticket} Report",
@@ -344,7 +342,6 @@ def run_evaluation() -> None:
         # Run evaluation
         result = batch_evaluator.evaluate_batch(
             tickets=state.tickets,
-            template=state.template,
             progress_callback=update_progress,
         )
 
@@ -425,10 +422,6 @@ def export_results_json(results: list) -> str:
                 "percentage": r.percentage,
                 "band": r.band.value,
                 "passed": r.passed,
-                "auto_fail": r.auto_fail,
-                "auto_fail_reason": r.auto_fail_reason,
-                "validation_deduction": r.validation_deduction,
-                "critical_process_deduction": r.critical_process_deduction,
                 "strengths": r.strengths,
                 "improvements": r.improvements,
                 "criterion_scores": [
@@ -454,13 +447,13 @@ def export_results_json(results: list) -> str:
 def export_results_csv(results: list) -> str:
     """Export results as CSV string."""
     lines = [
-        "ticket_number,template,total_score,max_score,percentage,band,passed,auto_fail"
+        "ticket_number,template,total_score,max_score,percentage,band,passed"
     ]
 
     for r in results:
         lines.append(
             f"{r.ticket_number},{r.template.value},{r.total_score},{r.max_score},"
-            f"{r.percentage:.1f},{r.band.value},{r.passed},{r.auto_fail}"
+            f"{r.percentage:.1f},{r.band.value},{r.passed}"
         )
 
     return "\n".join(lines)

@@ -69,7 +69,6 @@ def render_summary_metrics(
     total = len(results)
     passed = sum(1 for r in results if r.passed)
     failed = total - passed
-    auto_fails = sum(1 for r in results if r.auto_fail)
     avg_score = sum(r.total_score for r in results) / total if total > 0 else 0
     avg_percentage = sum(r.percentage for r in results) / total if total > 0 else 0
 
@@ -83,10 +82,10 @@ def render_summary_metrics(
         st.metric("Passed", f"{passed} ({pass_rate:.0f}%)")
 
     with col3:
-        st.metric("Failed", failed, delta=f"-{auto_fails} auto-fails" if auto_fails > 0 else None)
+        st.metric("Failed", failed)
 
     with col4:
-        st.metric("Avg Score", f"{avg_score:.1f}/70")
+        st.metric("Avg Score", f"{avg_score:.1f}/90")
 
     with col5:
         st.metric("Avg %", f"{avg_percentage:.1f}%")
@@ -101,7 +100,7 @@ def create_score_distribution_chart(results: list[EvaluationResult]) -> go.Figur
     fig.add_trace(
         go.Histogram(
             x=scores,
-            nbinsx=14,  # 70 points / 5 = 14 bins
+            nbinsx=18,  # 90 points / 5 = 18 bins
             marker_color="#3B82F6",
             marker_line_color="#1E40AF",
             marker_line_width=1,
@@ -111,17 +110,17 @@ def create_score_distribution_chart(results: list[EvaluationResult]) -> go.Figur
 
     # Add pass threshold line
     fig.add_vline(
-        x=63,
+        x=81,
         line_dash="dash",
         line_color="#22C55E",
-        annotation_text="Pass (63)",
+        annotation_text="Pass (81)",
         annotation_position="top",
     )
 
     fig.update_layout(
         xaxis_title="Score",
         yaxis_title="Number of Tickets",
-        xaxis={"range": [0, 70]},
+        xaxis={"range": [0, 90]},
         showlegend=False,
         height=300,
         margin={"l": 40, "r": 40, "t": 40, "b": 40},
@@ -216,16 +215,13 @@ def render_results_table(results: list[EvaluationResult]) -> None:
         }.get(r.band, "⚪")
 
         status = "✅ Pass" if r.passed else "❌ Fail"
-        if r.auto_fail:
-            status = "🚫 Auto-Fail"
 
         table_data.append({
             "Ticket": r.ticket_number,
-            "Score": f"{r.total_score}/70",
+            "Score": f"{r.total_score}/90",
             "Percentage": f"{r.percentage:.1f}%",
             "Band": f"{band_emoji} {r.band.display_name}",
             "Status": status,
-            "Deductions": r.total_deductions,
         })
 
     # Display with filtering
@@ -234,7 +230,7 @@ def render_results_table(results: list[EvaluationResult]) -> None:
     with filter_col1:
         status_filter = st.selectbox(
             "Filter by Status",
-            ["All", "Pass", "Fail", "Auto-Fail"],
+            ["All", "Pass", "Fail"],
         )
 
     with filter_col2:
@@ -249,9 +245,7 @@ def render_results_table(results: list[EvaluationResult]) -> None:
         if status_filter == "Pass":
             filtered_data = [d for d in filtered_data if "Pass" in d["Status"]]
         elif status_filter == "Fail":
-            filtered_data = [d for d in filtered_data if "Fail" in d["Status"] and "Auto" not in d["Status"]]
-        else:
-            filtered_data = [d for d in filtered_data if "Auto-Fail" in d["Status"]]
+            filtered_data = [d for d in filtered_data if "Fail" in d["Status"]]
 
     if band_filter != "All":
         filtered_data = [d for d in filtered_data if band_filter in d["Band"]]

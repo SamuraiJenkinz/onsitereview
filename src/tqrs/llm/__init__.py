@@ -1,4 +1,4 @@
-"""LLM evaluation module for TQRS."""
+"""LLM evaluation module for TQRS - Onsite Support Review."""
 
 from tqrs.llm.batch import BatchLLMEvaluator, BatchProgress, BatchResult, TicketEvaluationResult
 from tqrs.llm.client import (
@@ -13,12 +13,10 @@ from tqrs.llm.client import (
 from tqrs.llm.evaluator import LLMEvaluator
 from tqrs.llm.schemas import (
     CriterionEvaluation,
-    CustomerServiceEvaluation,
-    DescriptionEvaluation,
-    LLMEvaluationResponse,
-    ResolutionEvaluation,
-    SpellingGrammarEvaluation,
-    TroubleshootingEvaluation,
+    FieldCorrectnessEvaluation,
+    IncidentHandlingEvaluation,
+    IncidentNotesEvaluation,
+    ResolutionNotesEvaluation,
 )
 
 __all__ = [
@@ -39,10 +37,8 @@ __all__ = [
     "TicketEvaluationResult",
     # Schemas
     "CriterionEvaluation",
-    "DescriptionEvaluation",
-    "TroubleshootingEvaluation",
-    "ResolutionEvaluation",
-    "CustomerServiceEvaluation",
-    "SpellingGrammarEvaluation",
-    "LLMEvaluationResponse",
+    "FieldCorrectnessEvaluation",
+    "IncidentNotesEvaluation",
+    "IncidentHandlingEvaluation",
+    "ResolutionNotesEvaluation",
 ]

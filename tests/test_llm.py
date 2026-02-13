@@ -1,4 +1,4 @@
-"""Tests for LLM evaluation module."""
+"""Tests for LLM evaluation module - Onsite Support Review."""
 
 import json
 from unittest.mock import MagicMock, patch
@@ -16,21 +16,17 @@ from tqrs.llm import (
     TokenUsage,
 )
 from tqrs.llm.prompts import (
-    CustomerServicePrompt,
-    DescriptionPrompt,
-    ResolutionPrompt,
-    SpellingGrammarPrompt,
-    TroubleshootingPrompt,
+    FieldCorrectnessPrompt,
+    IncidentHandlingPrompt,
+    IncidentNotesPrompt,
+    ResolutionNotesPrompt,
 )
 from tqrs.llm.schemas import (
-    CustomerServiceEvaluation,
-    DescriptionEvaluation,
-    LLMEvaluationResponse,
-    ResolutionEvaluation,
-    SpellingGrammarEvaluation,
-    TroubleshootingEvaluation,
+    FieldCorrectnessEvaluation,
+    IncidentHandlingEvaluation,
+    IncidentNotesEvaluation,
+    ResolutionNotesEvaluation,
 )
-from tqrs.models.evaluation import TemplateType
 from tqrs.models.ticket import ServiceNowTicket
 
 
@@ -52,6 +48,7 @@ def sample_ticket() -> ServiceNowTicket:
         closed_at=datetime(2025, 12, 15, 5, 0, 0),
         caller_id="caller123",
         opened_by="agent123",
+        opened_for="user456",
         assigned_to="agent123",
         resolved_by="agent123",
         closed_by="agent123",
@@ -75,6 +72,8 @@ def sample_ticket() -> ServiceNowTicket:
         ),
         category="software",
         subcategory="reset_restart",
+        business_service="VDI Service",
+        cmdb_ci="VDI Pool - Bangalore",
         contact_type="phone",
         state="7",
         incident_state="7",
@@ -88,99 +87,68 @@ def sample_ticket() -> ServiceNowTicket:
 
 
 @pytest.fixture
-def mock_description_response() -> dict:
-    """Mock response for description evaluation."""
+def mock_field_correctness_response() -> dict:
+    """Mock response for field correctness evaluation."""
     return {
-        "criterion_id": "accurate_description",
-        "score": 20,
-        "max_score": 20,
-        "completeness_score": 10,
-        "clarity_score": 10,
-        "issue_stated": True,
-        "context_provided": True,
-        "user_impact_noted": True,
-        "evidence": ["Validated by: Okta Push MFA", "Issue/Request: Colleague is getting error"],
-        "reasoning": "Excellent description with all required elements.",
-        "strengths": ["Clear issue statement", "Validation documented"],
-        "improvements": [],
+        "category_score": 5,
+        "category_reasoning": "Software category correctly matches VDI issue.",
+        "subcategory_score": 5,
+        "subcategory_reasoning": "Reset/restart subcategory matches the resolution action.",
+        "service_score": 5,
+        "service_reasoning": "VDI Service correctly identified.",
+        "ci_score": 10,
+        "ci_reasoning": "VDI Pool - Bangalore correctly identified as the CI.",
+        "evidence": ["VDI reset/restart", "error message while connecting to VDI"],
         "coaching": "",
     }
 
 
 @pytest.fixture
-def mock_troubleshooting_response() -> dict:
-    """Mock response for troubleshooting evaluation."""
+def mock_incident_notes_response() -> dict:
+    """Mock response for incident notes evaluation."""
     return {
-        "criterion_id": "troubleshooting_quality",
+        "criterion_id": "incident_notes",
         "score": 20,
         "max_score": 20,
-        "steps_documented": True,
-        "logical_progression": True,
-        "appropriate_actions": True,
-        "outcome_documented": True,
-        "steps_count": 3,
-        "evidence": ["VDI reset/restart", "asked colleague to login after 5-10 mins"],
-        "reasoning": "Troubleshooting steps clearly documented with outcomes.",
-        "strengths": ["Clear step documentation", "Logical progression"],
-        "improvements": [],
+        "location_documented": True,
+        "contact_info_present": True,
+        "relevant_details_present": True,
+        "troubleshooting_documented": True,
+        "appropriate_field_usage": True,
+        "evidence": ["Contact Number: 1234567890", "Working remotely: Y"],
+        "reasoning": "All relevant information documented clearly.",
         "coaching": "",
     }
 
 
 @pytest.fixture
-def mock_resolution_response() -> dict:
-    """Mock response for resolution evaluation."""
+def mock_incident_handling_response() -> dict:
+    """Mock response for incident handling evaluation."""
     return {
-        "criterion_id": "resolution_notes",
+        "criterion_id": "incident_handling",
         "score": 15,
         "max_score": 15,
-        "outcome_clear": True,
-        "steps_documented": True,
-        "confirmation_obtained": True,
-        "resolution_complete": True,
-        "evidence": ["Colleague confirmed that they can login now", "Got confirmation to close"],
-        "reasoning": "Resolution notes complete with all required elements.",
-        "strengths": ["User confirmation obtained", "Clear resolution steps"],
-        "improvements": [],
+        "routed_correctly": True,
+        "resolved_appropriately": True,
+        "fcr_opportunity_missed": False,
+        "evidence": ["VDI reset/restart resolved the issue"],
+        "reasoning": "Incident resolved at first contact appropriately.",
         "coaching": "",
     }
 
 
 @pytest.fixture
-def mock_customer_service_response() -> dict:
-    """Mock response for customer service evaluation."""
+def mock_resolution_notes_response() -> dict:
+    """Mock response for resolution notes evaluation."""
     return {
-        "criterion_id": "customer_service_quality",
+        "criterion_id": "resolution_notes",
         "score": 20,
         "max_score": 20,
-        "professional_tone": True,
-        "empathy_shown": True,
-        "clear_communication": True,
-        "proper_greeting": True,
-        "proper_closing": True,
-        "expectations_set": True,
-        "evidence": ["Got confirmation to close the ticket"],
-        "reasoning": "High level of customer service demonstrated.",
-        "strengths": ["Professional interaction", "Clear communication"],
-        "improvements": [],
-        "coaching": "",
-    }
-
-
-@pytest.fixture
-def mock_spelling_response() -> dict:
-    """Mock response for spelling/grammar evaluation."""
-    return {
-        "criterion_id": "spelling_grammar",
-        "score": 2,
-        "max_score": 2,
-        "error_count": 0,
-        "errors_found": [],
-        "severity": "none",
-        "evidence": [],
-        "reasoning": "No spelling or grammar errors found.",
-        "strengths": ["Error-free writing"],
-        "improvements": [],
+        "summary_present": True,
+        "confirmation_present": True,
+        "is_wip_or_routed": False,
+        "evidence": ["Colleague confirmed that they can login now", "Got confirmation to close"],
+        "reasoning": "Resolution notes include both summary and user confirmation.",
         "coaching": "",
     }
 
@@ -194,7 +162,6 @@ class TestTokenUsage:
     """Tests for TokenUsage tracking."""
 
     def test_initial_state(self):
-        """Test initial token usage is zero."""
         usage = TokenUsage()
         assert usage.prompt_tokens == 0
         assert usage.completion_tokens == 0
@@ -202,39 +169,33 @@ class TestTokenUsage:
         assert usage.request_count == 0
 
     def test_add_usage(self):
-        """Test adding token usage."""
         usage = TokenUsage()
         usage.add({
             "prompt_tokens": 100,
             "completion_tokens": 50,
             "total_tokens": 150,
         })
-
         assert usage.prompt_tokens == 100
         assert usage.completion_tokens == 50
         assert usage.total_tokens == 150
         assert usage.request_count == 1
 
     def test_cumulative_usage(self):
-        """Test cumulative token usage tracking."""
         usage = TokenUsage()
         usage.add({"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150})
         usage.add({"prompt_tokens": 200, "completion_tokens": 100, "total_tokens": 300})
-
         assert usage.prompt_tokens == 300
         assert usage.completion_tokens == 150
         assert usage.total_tokens == 450
         assert usage.request_count == 2
 
     def test_estimated_cost(self):
-        """Test cost estimation."""
         usage = TokenUsage()
         usage.add({
-            "prompt_tokens": 1_000_000,  # $2.50
-            "completion_tokens": 1_000_000,  # $10.00
+            "prompt_tokens": 1_000_000,
+            "completion_tokens": 1_000_000,
             "total_tokens": 2_000_000,
         })
-
         assert usage.estimated_cost == pytest.approx(12.50, rel=0.01)
 
 
@@ -247,16 +208,13 @@ class TestOpenAIClient:
     """Tests for OpenAI client."""
 
     def test_init(self):
-        """Test client initialization."""
         client = OpenAIClient(api_key="test-key")
-
         assert client.config.api_key == "test-key"
         assert client.config.model == "gpt-4o"
         assert client.config.temperature == 0.1
         assert client.config.max_retries == 3
 
     def test_init_with_custom_config(self):
-        """Test client with custom configuration."""
         client = OpenAIClient(
             api_key="test-key",
             base_url="https://custom.api.com",
@@ -264,7 +222,6 @@ class TestOpenAIClient:
             temperature=0.2,
             max_retries=5,
         )
-
         assert client.config.base_url == "https://custom.api.com"
         assert client.config.model == "gpt-4-turbo"
         assert client.config.temperature == 0.2
@@ -272,8 +229,6 @@ class TestOpenAIClient:
 
     @patch("tqrs.llm.client.OpenAI")
     def test_complete_success(self, mock_openai_class):
-        """Test successful completion request."""
-        # Mock response
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = '{"result": "success"}'
@@ -294,7 +249,6 @@ class TestOpenAIClient:
 
     @patch("tqrs.llm.client.OpenAI")
     def test_complete_invalid_json(self, mock_openai_class):
-        """Test handling of invalid JSON response."""
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = "not valid json"
@@ -311,7 +265,6 @@ class TestOpenAIClient:
 
     @patch("tqrs.llm.client.OpenAI")
     def test_complete_empty_response(self, mock_openai_class):
-        """Test handling of empty response."""
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = None
@@ -327,12 +280,9 @@ class TestOpenAIClient:
             client.complete([{"role": "user", "content": "test"}])
 
     def test_reset_usage(self):
-        """Test resetting token usage."""
         client = OpenAIClient(api_key="test-key")
         client.token_usage.add({"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150})
-
         old_usage = client.reset_usage()
-
         assert old_usage.total_tokens == 150
         assert client.token_usage.total_tokens == 0
 
@@ -345,83 +295,46 @@ class TestOpenAIClient:
 class TestSchemas:
     """Tests for evaluation schemas."""
 
-    def test_description_evaluation(self, mock_description_response):
-        """Test DescriptionEvaluation model."""
-        eval_result = DescriptionEvaluation.model_validate(mock_description_response)
+    def test_field_correctness_evaluation(self, mock_field_correctness_response):
+        eval_result = FieldCorrectnessEvaluation.model_validate(mock_field_correctness_response)
+        assert eval_result.category_score == 5
+        assert eval_result.subcategory_score == 5
+        assert eval_result.service_score == 5
+        assert eval_result.ci_score == 10
 
-        assert eval_result.criterion_id == "accurate_description"
+    def test_incident_notes_evaluation(self, mock_incident_notes_response):
+        eval_result = IncidentNotesEvaluation.model_validate(mock_incident_notes_response)
+        assert eval_result.criterion_id == "incident_notes"
         assert eval_result.score == 20
         assert eval_result.max_score == 20
-        assert eval_result.completeness_score == 10
-        assert eval_result.clarity_score == 10
-        assert eval_result.issue_stated is True
+        assert eval_result.location_documented is True
+        assert eval_result.contact_info_present is True
 
-    def test_troubleshooting_evaluation(self, mock_troubleshooting_response):
-        """Test TroubleshootingEvaluation model."""
-        eval_result = TroubleshootingEvaluation.model_validate(mock_troubleshooting_response)
-
-        assert eval_result.criterion_id == "troubleshooting_quality"
-        assert eval_result.score == 20
-        assert eval_result.steps_documented is True
-        assert eval_result.steps_count == 3
-
-    def test_resolution_evaluation(self, mock_resolution_response):
-        """Test ResolutionEvaluation model."""
-        eval_result = ResolutionEvaluation.model_validate(mock_resolution_response)
-
-        assert eval_result.criterion_id == "resolution_notes"
+    def test_incident_handling_evaluation(self, mock_incident_handling_response):
+        eval_result = IncidentHandlingEvaluation.model_validate(mock_incident_handling_response)
+        assert eval_result.criterion_id == "incident_handling"
         assert eval_result.score == 15
-        assert eval_result.confirmation_obtained is True
+        assert eval_result.routed_correctly is True
+        assert eval_result.fcr_opportunity_missed is False
 
-    def test_customer_service_evaluation(self, mock_customer_service_response):
-        """Test CustomerServiceEvaluation model."""
-        eval_result = CustomerServiceEvaluation.model_validate(mock_customer_service_response)
-
-        assert eval_result.criterion_id == "customer_service_quality"
+    def test_resolution_notes_evaluation(self, mock_resolution_notes_response):
+        eval_result = ResolutionNotesEvaluation.model_validate(mock_resolution_notes_response)
+        assert eval_result.criterion_id == "resolution_notes"
         assert eval_result.score == 20
-        assert eval_result.professional_tone is True
+        assert eval_result.summary_present is True
+        assert eval_result.confirmation_present is True
 
-    def test_spelling_evaluation(self, mock_spelling_response):
-        """Test SpellingGrammarEvaluation model."""
-        eval_result = SpellingGrammarEvaluation.model_validate(mock_spelling_response)
-
-        assert eval_result.criterion_id == "spelling_grammar"
-        assert eval_result.score == 2
-        assert eval_result.error_count == 0
-        assert eval_result.severity == "none"
-
-    def test_llm_evaluation_response(
-        self, mock_description_response, mock_spelling_response
-    ):
-        """Test LLMEvaluationResponse model."""
-        desc_eval = DescriptionEvaluation.model_validate(mock_description_response)
-        spell_eval = SpellingGrammarEvaluation.model_validate(mock_spelling_response)
-
-        response = LLMEvaluationResponse(
-            ticket_number="INC1234567",
-            template_type="incident_logging",
-            description_eval=desc_eval,
-            spelling_grammar_eval=spell_eval,
-            overall_assessment="Excellent ticket quality.",
-            total_llm_score=22,
-            max_llm_score=22,
-        )
-
-        assert response.llm_percentage == 100.0
-        assert len(response.get_all_coaching()) == 0
-
-    def test_score_validation(self):
-        """Test score validation bounds."""
+    def test_score_validation_bounds(self):
         with pytest.raises(Exception):
-            DescriptionEvaluation(
+            IncidentNotesEvaluation(
                 criterion_id="test",
-                score=-1,  # Invalid: below 0
+                score=-1,
                 max_score=20,
-                completeness_score=10,
-                clarity_score=10,
-                issue_stated=True,
-                context_provided=True,
-                user_impact_noted=True,
+                location_documented=True,
+                contact_info_present=True,
+                relevant_details_present=True,
+                troubleshooting_documented=True,
+                appropriate_field_usage=True,
                 reasoning="test",
             )
 
@@ -434,50 +347,33 @@ class TestSchemas:
 class TestPrompts:
     """Tests for prompt templates."""
 
-    def test_description_prompt_messages(self, sample_ticket):
-        """Test description prompt message construction."""
-        messages = DescriptionPrompt.build_messages(sample_ticket)
-
+    def test_field_correctness_prompt_messages(self, sample_ticket):
+        messages = FieldCorrectnessPrompt.build_messages(sample_ticket)
         assert len(messages) == 2
         assert messages[0]["role"] == "system"
         assert messages[1]["role"] == "user"
         assert "INC1234567" in messages[1]["content"]
-        assert "accurate_description" in messages[1]["content"]
+        assert "category_score" in messages[1]["content"]
 
-    def test_troubleshooting_prompt_messages(self, sample_ticket):
-        """Test troubleshooting prompt message construction."""
-        messages = TroubleshootingPrompt.build_messages(sample_ticket)
-
+    def test_incident_notes_prompt_messages(self, sample_ticket):
+        messages = IncidentNotesPrompt.build_messages(sample_ticket)
         assert len(messages) == 2
-        assert "troubleshooting" in messages[0]["content"].lower()
-        assert "VDI reset/restart" in messages[1]["content"]
+        assert "incident" in messages[0]["content"].lower()
+        assert "notes" in messages[0]["content"].lower()
 
-    def test_resolution_prompt_messages(self, sample_ticket):
-        """Test resolution prompt message construction."""
-        messages = ResolutionPrompt.build_messages(sample_ticket)
+    def test_incident_handling_prompt_messages(self, sample_ticket):
+        messages = IncidentHandlingPrompt.build_messages(sample_ticket)
+        assert len(messages) == 2
+        assert "handling" in messages[0]["content"].lower()
 
+    def test_resolution_notes_prompt_messages(self, sample_ticket):
+        messages = ResolutionNotesPrompt.build_messages(sample_ticket)
         assert len(messages) == 2
         assert "resolution" in messages[0]["content"].lower()
 
-    def test_customer_service_prompt_messages(self, sample_ticket):
-        """Test customer service prompt message construction."""
-        messages = CustomerServicePrompt.build_messages(sample_ticket)
-
-        assert len(messages) == 2
-        assert "customer service" in messages[0]["content"].lower()
-
-    def test_spelling_prompt_messages(self, sample_ticket):
-        """Test spelling/grammar prompt message construction."""
-        messages = SpellingGrammarPrompt.build_messages(sample_ticket)
-
-        assert len(messages) == 2
-        assert "spelling" in messages[0]["content"].lower()
-
     def test_prompt_includes_all_ticket_fields(self, sample_ticket):
-        """Test that prompts include key ticket fields."""
-        messages = DescriptionPrompt.build_messages(sample_ticket)
+        messages = FieldCorrectnessPrompt.build_messages(sample_ticket)
         content = messages[1]["content"]
-
         assert sample_ticket.number in content
         assert sample_ticket.category in content
         assert sample_ticket.contact_type in content
@@ -493,162 +389,102 @@ class TestLLMEvaluator:
     """Tests for LLM Evaluator."""
 
     @patch.object(OpenAIClient, "complete")
-    def test_evaluate_description(
-        self, mock_complete, sample_ticket, mock_description_response
+    def test_evaluate_field_correctness(
+        self, mock_complete, sample_ticket, mock_field_correctness_response
     ):
-        """Test description evaluation."""
-        mock_complete.return_value = mock_description_response
+        mock_complete.return_value = mock_field_correctness_response
 
         client = OpenAIClient(api_key="test-key")
         evaluator = LLMEvaluator(client)
+        results = evaluator.evaluate_field_correctness(sample_ticket)
 
-        result = evaluator.evaluate_description(sample_ticket)
+        assert len(results) == 4
+        assert results[0].criterion_id == "correct_category"
+        assert results[0].score == 5
+        assert results[1].criterion_id == "correct_subcategory"
+        assert results[1].score == 5
+        assert results[2].criterion_id == "correct_service"
+        assert results[2].score == 5
+        assert results[3].criterion_id == "correct_ci"
+        assert results[3].score == 10
 
-        assert result.criterion_id == "accurate_description"
+    @patch.object(OpenAIClient, "complete")
+    def test_evaluate_incident_notes(
+        self, mock_complete, sample_ticket, mock_incident_notes_response
+    ):
+        mock_complete.return_value = mock_incident_notes_response
+
+        client = OpenAIClient(api_key="test-key")
+        evaluator = LLMEvaluator(client)
+        result = evaluator.evaluate_incident_notes(sample_ticket)
+
+        assert result.criterion_id == "incident_notes"
         assert result.score == 20
-        assert result.max_score == 20
         assert result.passed is True
 
     @patch.object(OpenAIClient, "complete")
-    def test_evaluate_troubleshooting(
-        self, mock_complete, sample_ticket, mock_troubleshooting_response
+    def test_evaluate_incident_handling(
+        self, mock_complete, sample_ticket, mock_incident_handling_response
     ):
-        """Test troubleshooting evaluation."""
-        mock_complete.return_value = mock_troubleshooting_response
+        mock_complete.return_value = mock_incident_handling_response
 
         client = OpenAIClient(api_key="test-key")
         evaluator = LLMEvaluator(client)
+        result = evaluator.evaluate_incident_handling(sample_ticket)
 
-        result = evaluator.evaluate_troubleshooting(sample_ticket)
-
-        assert result.criterion_id == "troubleshooting_quality"
-        assert result.score == 20
-        assert result.passed is True
-
-    @patch.object(OpenAIClient, "complete")
-    def test_evaluate_resolution(
-        self, mock_complete, sample_ticket, mock_resolution_response
-    ):
-        """Test resolution evaluation."""
-        mock_complete.return_value = mock_resolution_response
-
-        client = OpenAIClient(api_key="test-key")
-        evaluator = LLMEvaluator(client)
-
-        result = evaluator.evaluate_resolution(sample_ticket)
-
-        assert result.criterion_id == "resolution_notes"
+        assert result.criterion_id == "incident_handling"
         assert result.score == 15
         assert result.passed is True
 
     @patch.object(OpenAIClient, "complete")
-    def test_evaluate_customer_service(
-        self, mock_complete, sample_ticket, mock_customer_service_response
+    def test_evaluate_resolution_notes(
+        self, mock_complete, sample_ticket, mock_resolution_notes_response
     ):
-        """Test customer service evaluation."""
-        mock_complete.return_value = mock_customer_service_response
+        mock_complete.return_value = mock_resolution_notes_response
 
         client = OpenAIClient(api_key="test-key")
         evaluator = LLMEvaluator(client)
+        result = evaluator.evaluate_resolution_notes(sample_ticket)
 
-        result = evaluator.evaluate_customer_service(sample_ticket)
-
-        assert result.criterion_id == "customer_service_quality"
+        assert result.criterion_id == "resolution_notes"
         assert result.score == 20
         assert result.passed is True
 
     @patch.object(OpenAIClient, "complete")
-    def test_evaluate_spelling_grammar(
-        self, mock_complete, sample_ticket, mock_spelling_response
-    ):
-        """Test spelling/grammar evaluation."""
-        mock_complete.return_value = mock_spelling_response
-
-        client = OpenAIClient(api_key="test-key")
-        evaluator = LLMEvaluator(client)
-
-        result = evaluator.evaluate_spelling_grammar(sample_ticket)
-
-        assert result.criterion_id == "spelling_grammar"
-        assert result.score == 2
-        assert result.passed is True
-
-    @patch.object(OpenAIClient, "complete")
-    def test_evaluate_ticket_incident_logging(
-        self, mock_complete, sample_ticket, mock_description_response, mock_spelling_response
-    ):
-        """Test full ticket evaluation for Incident Logging template."""
-        # Return appropriate response based on call
-        mock_complete.side_effect = [
-            mock_description_response,
-            mock_spelling_response,
-        ]
-
-        client = OpenAIClient(api_key="test-key")
-        evaluator = LLMEvaluator(client)
-
-        results = evaluator.evaluate_ticket(sample_ticket, TemplateType.INCIDENT_LOGGING)
-
-        assert len(results) == 2
-        assert results[0].criterion_id == "accurate_description"
-        assert results[1].criterion_id == "spelling_grammar"
-
-    @patch.object(OpenAIClient, "complete")
-    def test_evaluate_ticket_incident_handling(
+    def test_evaluate_ticket_returns_7_results(
         self,
         mock_complete,
         sample_ticket,
-        mock_description_response,
-        mock_troubleshooting_response,
-        mock_resolution_response,
-        mock_spelling_response,
+        mock_field_correctness_response,
+        mock_incident_notes_response,
+        mock_incident_handling_response,
+        mock_resolution_notes_response,
     ):
-        """Test full ticket evaluation for Incident Handling template."""
+        """Test full ticket evaluation returns 7 RuleResults from 4 LLM calls."""
         mock_complete.side_effect = [
-            mock_description_response,
-            mock_troubleshooting_response,
-            mock_resolution_response,
-            mock_spelling_response,
+            mock_field_correctness_response,
+            mock_incident_notes_response,
+            mock_incident_handling_response,
+            mock_resolution_notes_response,
         ]
 
         client = OpenAIClient(api_key="test-key")
         evaluator = LLMEvaluator(client)
+        results = evaluator.evaluate_ticket(sample_ticket)
 
-        results = evaluator.evaluate_ticket(sample_ticket, TemplateType.INCIDENT_HANDLING)
-
-        assert len(results) == 4
+        assert len(results) == 7
         criterion_ids = [r.criterion_id for r in results]
-        assert "accurate_description" in criterion_ids
-        assert "troubleshooting_quality" in criterion_ids
+        assert "correct_category" in criterion_ids
+        assert "correct_subcategory" in criterion_ids
+        assert "correct_service" in criterion_ids
+        assert "correct_ci" in criterion_ids
+        assert "incident_notes" in criterion_ids
+        assert "incident_handling" in criterion_ids
         assert "resolution_notes" in criterion_ids
-        assert "spelling_grammar" in criterion_ids
 
-    @patch.object(OpenAIClient, "complete")
-    def test_evaluate_ticket_customer_service(
-        self,
-        mock_complete,
-        sample_ticket,
-        mock_description_response,
-        mock_troubleshooting_response,
-        mock_customer_service_response,
-        mock_spelling_response,
-    ):
-        """Test full ticket evaluation for Customer Service template."""
-        mock_complete.side_effect = [
-            mock_description_response,
-            mock_troubleshooting_response,
-            mock_customer_service_response,
-            mock_spelling_response,
-        ]
-
-        client = OpenAIClient(api_key="test-key")
-        evaluator = LLMEvaluator(client)
-
-        results = evaluator.evaluate_ticket(sample_ticket, TemplateType.CUSTOMER_SERVICE)
-
-        assert len(results) == 4
-        criterion_ids = [r.criterion_id for r in results]
-        assert "customer_service_quality" in criterion_ids
+        # Verify total max score is 80 (LLM portion of 90)
+        total_max = sum(r.max_score for r in results)
+        assert total_max == 80  # 5+5+5+10+20+15+20
 
     @patch.object(OpenAIClient, "complete")
     def test_evaluate_handles_api_error(self, mock_complete, sample_ticket):
@@ -657,13 +493,12 @@ class TestLLMEvaluator:
 
         client = OpenAIClient(api_key="test-key")
         evaluator = LLMEvaluator(client)
+        results = evaluator.evaluate_ticket(sample_ticket)
 
-        results = evaluator.evaluate_ticket(sample_ticket, TemplateType.INCIDENT_LOGGING)
-
-        # Should return error results instead of raising
-        assert len(results) == 2
-        assert results[0].score == 0
-        assert "error" in results[0].reasoning.lower()
+        # Should return 7 error results (4 for fields + 1+1+1)
+        assert len(results) == 7
+        assert all(r.score == 0 for r in results)
+        assert all("error" in r.reasoning.lower() for r in results)
 
 
 # ============================================================================
@@ -675,15 +510,12 @@ class TestBatchLLMEvaluator:
     """Tests for batch LLM evaluator."""
 
     def test_batch_progress(self):
-        """Test batch progress tracking."""
         progress = BatchProgress(total=10, completed=5, failed=1)
-
         assert progress.percentage == 50.0
         assert progress.elapsed_seconds >= 0
 
     @patch.object(LLMEvaluator, "evaluate_ticket")
     def test_evaluate_batch(self, mock_evaluate, sample_ticket):
-        """Test batch evaluation."""
         mock_evaluate.return_value = [
             MagicMock(criterion_id="test", score=10, passed=True)
         ]
@@ -692,7 +524,7 @@ class TestBatchLLMEvaluator:
         batch_evaluator = BatchLLMEvaluator(client, concurrency=2)
 
         tickets = [sample_ticket, sample_ticket]
-        result = batch_evaluator.evaluate_batch(tickets, TemplateType.INCIDENT_LOGGING)
+        result = batch_evaluator.evaluate_batch(tickets)
 
         assert result.total_tickets == 2
         assert result.successful == 2
@@ -701,7 +533,6 @@ class TestBatchLLMEvaluator:
 
     @patch.object(LLMEvaluator, "evaluate_ticket")
     def test_evaluate_batch_with_failures(self, mock_evaluate, sample_ticket):
-        """Test batch evaluation with some failures."""
         mock_evaluate.side_effect = [
             [MagicMock(criterion_id="test", score=10, passed=True)],
             LLMAPIError("API Error"),
@@ -711,7 +542,7 @@ class TestBatchLLMEvaluator:
         batch_evaluator = BatchLLMEvaluator(client)
 
         tickets = [sample_ticket, sample_ticket]
-        result = batch_evaluator.evaluate_batch(tickets, TemplateType.INCIDENT_LOGGING)
+        result = batch_evaluator.evaluate_batch(tickets)
 
         assert result.total_tickets == 2
         assert result.successful == 1
@@ -720,7 +551,6 @@ class TestBatchLLMEvaluator:
 
     @patch.object(LLMEvaluator, "evaluate_ticket")
     def test_evaluate_batch_with_progress_callback(self, mock_evaluate, sample_ticket):
-        """Test batch evaluation with progress callback."""
         mock_evaluate.return_value = [MagicMock()]
 
         client = OpenAIClient(api_key="test-key")
@@ -732,26 +562,18 @@ class TestBatchLLMEvaluator:
             progress_updates.append(progress.percentage)
 
         tickets = [sample_ticket, sample_ticket, sample_ticket]
-        batch_evaluator.evaluate_batch(
-            tickets,
-            TemplateType.INCIDENT_LOGGING,
-            progress_callback=callback,
-        )
+        batch_evaluator.evaluate_batch(tickets, progress_callback=callback)
 
-        # Should have received progress updates
         assert len(progress_updates) > 0
 
     @patch.object(LLMEvaluator, "evaluate_ticket")
-    @patch.object(LLMEvaluator, "get_full_evaluation")
-    def test_evaluate_single(self, mock_full, mock_evaluate, sample_ticket):
-        """Test single ticket evaluation."""
+    def test_evaluate_single(self, mock_evaluate, sample_ticket):
         mock_evaluate.return_value = [MagicMock()]
-        mock_full.return_value = MagicMock()
 
         client = OpenAIClient(api_key="test-key")
         batch_evaluator = BatchLLMEvaluator(client)
 
-        result = batch_evaluator.evaluate_single(sample_ticket, TemplateType.INCIDENT_LOGGING)
+        result = batch_evaluator.evaluate_single(sample_ticket)
 
         assert result.success is True
         assert result.ticket_number == "INC1234567"
@@ -770,14 +592,17 @@ class TestIntegration:
         self,
         mock_openai_class,
         sample_ticket,
-        mock_description_response,
-        mock_spelling_response,
+        mock_field_correctness_response,
+        mock_incident_notes_response,
+        mock_incident_handling_response,
+        mock_resolution_notes_response,
     ):
-        """Test complete evaluation flow."""
-        # Set up mock responses
+        """Test complete evaluation flow with 4 LLM calls -> 7 results."""
         responses = [
-            json.dumps(mock_description_response),
-            json.dumps(mock_spelling_response),
+            json.dumps(mock_field_correctness_response),
+            json.dumps(mock_incident_notes_response),
+            json.dumps(mock_incident_handling_response),
+            json.dumps(mock_resolution_notes_response),
         ]
         response_iter = iter(responses)
 
@@ -795,17 +620,20 @@ class TestIntegration:
         mock_client.chat.completions.create.side_effect = make_response
         mock_openai_class.return_value = mock_client
 
-        # Run evaluation
         client = OpenAIClient(api_key="test-key")
         evaluator = LLMEvaluator(client)
-        results = evaluator.evaluate_ticket(sample_ticket, TemplateType.INCIDENT_LOGGING)
+        results = evaluator.evaluate_ticket(sample_ticket)
 
-        # Verify results
-        assert len(results) == 2
-        assert results[0].criterion_id == "accurate_description"
-        assert results[0].score == 20
-        assert results[1].criterion_id == "spelling_grammar"
-        assert results[1].score == 2
+        # 4 LLM calls -> 7 results
+        assert len(results) == 7
+        assert results[0].criterion_id == "correct_category"
+        assert results[0].score == 5
+        assert results[4].criterion_id == "incident_notes"
+        assert results[4].score == 20
+        assert results[5].criterion_id == "incident_handling"
+        assert results[5].score == 15
+        assert results[6].criterion_id == "resolution_notes"
+        assert results[6].score == 20
 
-        # Verify token tracking
-        assert client.token_usage.total_tokens == 300  # 2 calls * 150
+        # 4 API calls * 150 tokens each
+        assert client.token_usage.total_tokens == 600

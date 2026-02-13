@@ -25,11 +25,6 @@
                     <p class="text-sm text-gray-500 mt-1">Evaluated: {{ evaluated_at }}</p>
                 </div>
                 <div class="text-right">
-                    {% if auto_fail %}
-                    <div class="text-5xl font-bold text-red-600">FAIL</div>
-                    <div class="text-lg font-semibold text-red-600 mt-2">Auto-Failed</div>
-                    <div class="text-sm text-gray-600 mt-1">{{ auto_fail_reason }}</div>
-                    {% else %}
                     <div class="text-5xl font-bold" style="color: {{ band_color }}">{{ percentage }}%</div>
                     <div class="text-lg font-semibold mt-2" style="color: {{ band_color }}">{{ band }}</div>
                     <div class="text-sm text-gray-600 mt-1">{{ total_score }}/{{ max_score }} points</div>
@@ -44,7 +39,6 @@
                         </span>
                         {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -69,46 +63,11 @@
             </div>
 
             <!-- Score Gauge -->
-            {% if not auto_fail %}
             <div id="score-gauge" class="flex justify-center"></div>
-            {% endif %}
         </div>
-
-        <!-- Deductions Section (if applicable) -->
-        {% if validation_deduction != 0 or critical_process_deduction != 0 %}
-        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">Deductions Applied</h2>
-
-            <div class="space-y-4">
-                {% if validation_deduction != 0 %}
-                <div class="bg-orange-50 border-l-4 border-orange-400 p-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="font-semibold text-orange-800">Validation Deduction</div>
-                            <div class="text-orange-700 text-sm">{{ validation_status }}</div>
-                        </div>
-                        <div class="text-2xl font-bold text-orange-600">{{ validation_deduction }} pts</div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if critical_process_deduction != 0 %}
-                <div class="bg-red-50 border-l-4 border-red-400 p-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="font-semibold text-red-800">Critical Process Deduction</div>
-                            <div class="text-red-700 text-sm">{{ critical_process_status }}</div>
-                        </div>
-                        <div class="text-2xl font-bold text-red-600">{{ critical_process_deduction }} pts</div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
 
         <!-- Path to Passing Section (for failing tickets) -->
-        {% if not passed and not auto_fail and path_to_passing %}
+        {% if not passed and path_to_passing %}
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
             <h2 class="text-2xl font-bold mb-2 flex items-center">
                 <span class="text-3xl mr-3">🎯</span>
@@ -199,7 +158,7 @@
         {% endif %}
 
         <!-- Already Passing Message -->
-        {% if passed and not auto_fail %}
+        {% if passed %}
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
             <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl p-6 text-center">
                 <div class="text-4xl mb-2">🎉</div>
@@ -326,7 +285,6 @@
         </div>
     </div>
 
-    {% if not auto_fail %}
     <script>
     // Gauge chart for score visualization
     var data = [{
@@ -368,6 +326,5 @@
 
     Plotly.newPlot('score-gauge', data, layout, config);
     </script>
-    {% endif %}
 </body>
 </html>

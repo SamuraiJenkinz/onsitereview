@@ -5,7 +5,6 @@ from io import BytesIO
 
 import streamlit as st
 
-from tqrs.models.evaluation import TemplateType
 from tqrs.models.ticket import ServiceNowTicket
 from tqrs.parser.pdf import PDFParser
 from tqrs.parser.servicenow import ServiceNowParser
@@ -54,41 +53,6 @@ def render_upload_section() -> None:
     state = get_state()
     if has_data():
         st.success(f"✅ {len(state.tickets)} ticket(s) loaded")
-
-    st.divider()
-
-    # Template selection
-    st.subheader("📋 Evaluation Template")
-    template_options = {
-        "Incident Logging": TemplateType.INCIDENT_LOGGING,
-        "Incident Handling": TemplateType.INCIDENT_HANDLING,
-    }
-
-    # Get current template to detect changes
-    current_template = state.template
-
-    selected_template = st.radio(
-        "Select template",
-        options=list(template_options.keys()),
-        index=list(template_options.values()).index(current_template),
-        help="Choose the evaluation template based on what aspect you want to assess",
-    )
-    new_template = template_options[selected_template]
-
-    # If template changed, reset evaluation state (but keep tickets and API config)
-    if new_template != current_template:
-        update_state(
-            template=new_template,
-            results=None,
-            summary=None,
-            is_processing=False,
-            current_progress=None,
-            selected_ticket_index=0,
-            errors=[],
-        )
-        st.rerun()
-    else:
-        update_state(template=new_template)
 
     st.divider()
 

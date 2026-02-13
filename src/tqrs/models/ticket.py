@@ -20,6 +20,7 @@ class ServiceNowTicket(BaseModel):
     # People (sys_id references)
     caller_id: str = Field(..., description="Sys_id of the caller")
     opened_by: str = Field(..., description="Sys_id of who opened the ticket")
+    opened_for: str = Field("", description="Sys_id of person ticket was opened for")
     assigned_to: str = Field(..., description="Sys_id of assignee")
     resolved_by: str | None = Field(None, description="Sys_id of resolver")
     closed_by: str | None = Field(None, description="Sys_id of who closed")
@@ -143,16 +144,3 @@ class ServiceNowTicket(BaseModel):
         """Check if ticket has been resolved."""
         return self.resolved_at is not None
 
-    @property
-    def has_validation(self) -> bool:
-        """Check if validation is documented in description."""
-        validation_keywords = [
-            "validated by",
-            "validation:",
-            "okta",
-            "mfa",
-            "verified",
-            "confirmed identity",
-        ]
-        desc_lower = self.description.lower()
-        return any(kw in desc_lower for kw in validation_keywords)

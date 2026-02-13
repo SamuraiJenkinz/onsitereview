@@ -105,6 +105,7 @@ class ServiceNowParser:
             # People
             caller_id=raw.get("caller_id", ""),
             opened_by=raw.get("opened_by", ""),
+            opened_for=raw.get("opened_for", ""),
             assigned_to=raw.get("assigned_to", ""),
             resolved_by=raw.get("resolved_by", "") or None,
             closed_by=raw.get("closed_by", "") or None,

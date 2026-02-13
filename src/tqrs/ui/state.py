@@ -26,7 +26,7 @@ class AppState:
     errors: list[tuple[str, str]] = field(default_factory=list)
 
     # Configuration
-    template: TemplateType = TemplateType.INCIDENT_LOGGING
+    template: TemplateType = TemplateType.ONSITE_REVIEW
     api_key: str = ""
     api_base_url: str = ""  # For OpenAI Enterprise endpoints
     # Azure OpenAI settings

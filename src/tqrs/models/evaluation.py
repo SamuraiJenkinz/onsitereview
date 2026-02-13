@@ -9,9 +9,7 @@ from pydantic import BaseModel, Field, computed_field
 class TemplateType(str, Enum):
     """Evaluation template types."""
 
-    INCIDENT_LOGGING = "incident_logging"
-    INCIDENT_HANDLING = "incident_handling"
-    CUSTOMER_SERVICE = "customer_service"
+    ONSITE_REVIEW = "onsite_review"
 
 
 class PerformanceBand(str, Enum):
@@ -87,23 +85,13 @@ class EvaluationResult(BaseModel):
     template: TemplateType = Field(..., description="Template used for evaluation")
 
     # Score totals
-    total_score: int = Field(..., ge=0, le=70, description="Total points earned (0-70)")
-    max_score: int = Field(70, description="Maximum possible score")
+    total_score: int = Field(..., ge=0, le=90, description="Total points earned (0-90)")
+    max_score: int = Field(90, description="Maximum possible score")
 
     # Criterion breakdown
     criterion_scores: list[CriterionScore] = Field(
         ..., description="Individual criterion scores"
     )
-
-    # Deductions
-    validation_deduction: int = Field(
-        0, ge=-15, le=0, description="Validation deduction (0 or -15)"
-    )
-    critical_process_deduction: int = Field(
-        0, ge=-35, le=0, description="Critical process deduction (0 or -35)"
-    )
-    auto_fail: bool = Field(False, description="Whether ticket auto-failed")
-    auto_fail_reason: str | None = Field(None, description="Reason for auto-fail if applicable")
 
     # Summary
     strengths: list[str] = Field(default_factory=list, description="Areas of strength")
@@ -123,8 +111,6 @@ class EvaluationResult(BaseModel):
     @property
     def percentage(self) -> float:
         """Calculate percentage score."""
-        if self.auto_fail:
-            return 0.0
         return round((self.total_score / self.max_score) * 100, 1)
 
     @computed_field
@@ -136,15 +122,13 @@ class EvaluationResult(BaseModel):
     @computed_field
     @property
     def passed(self) -> bool:
-        """Check if ticket passed (>= 90% = 63/70)."""
-        if self.auto_fail:
-            return False
+        """Check if ticket passed (>= 90% = 81/90)."""
         return self.percentage >= 90.0
 
     @property
     def pass_threshold(self) -> int:
         """Minimum score to pass."""
-        return 63  # 90% of 70
+        return 81  # 90% of 90
 
     @property
     def points_to_pass(self) -> int:
@@ -160,11 +144,6 @@ class EvaluationResult(BaseModel):
             None,
         )
 
-    @property
-    def total_deductions(self) -> int:
-        """Sum of all deductions applied."""
-        return abs(self.validation_deduction) + abs(self.critical_process_deduction)
-
 
 class BatchEvaluationSummary(BaseModel):
     """Summary statistics for a batch of evaluations."""
@@ -172,7 +151,6 @@ class BatchEvaluationSummary(BaseModel):
     total_tickets: int = Field(..., description="Number of tickets evaluated")
     passed_count: int = Field(..., description="Number of tickets that passed")
     failed_count: int = Field(..., description="Number of tickets that failed")
-    auto_fail_count: int = Field(0, description="Number of auto-fails")
 
     average_score: float = Field(..., description="Average score across batch")
     average_percentage: float = Field(..., description="Average percentage across batch")
@@ -199,3 +177,34 @@ class BatchEvaluationSummary(BaseModel):
         if self.total_tickets == 0:
             return 0.0
         return round((self.passed_count / self.total_tickets) * 100, 1)
+
+
+class AnalystReview(BaseModel):
+    """Aggregated review for a single analyst across multiple incidents."""
+
+    analyst_id: str = Field(..., description="Analyst identifier")
+    evaluations: list[EvaluationResult] = Field(
+        ..., description="Up to 3 incident evaluations"
+    )
+
+    @computed_field
+    @property
+    def average_percentage(self) -> float:
+        """Average percentage across all evaluated incidents."""
+        if not self.evaluations:
+            return 0.0
+        return round(
+            sum(e.percentage for e in self.evaluations) / len(self.evaluations), 1
+        )
+
+    @computed_field
+    @property
+    def band(self) -> PerformanceBand:
+        """Performance band from average percentage."""
+        return PerformanceBand.from_percentage(self.average_percentage)
+
+    @computed_field
+    @property
+    def passed(self) -> bool:
+        """Whether analyst passed (average >= 90%)."""
+        return self.average_percentage >= 90.0

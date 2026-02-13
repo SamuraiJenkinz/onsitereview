@@ -1,6 +1,4 @@
-"""Prompt templates for LLM ticket evaluation."""
-
-from typing import Any
+"""Prompt templates for LLM ticket evaluation - Onsite Support Review."""
 
 from tqrs.models.ticket import ServiceNowTicket
 
@@ -15,6 +13,9 @@ def _build_ticket_context(ticket: ServiceNowTicket) -> str:
         f"Contact Type: {ticket.contact_type}",
         f"Category: {ticket.category}",
         f"Subcategory: {ticket.subcategory}",
+        f"Business Service: {ticket.business_service or '(not set)'}",
+        f"Configuration Item: {ticket.cmdb_ci or '(not set)'}",
+        f"Opened For: {ticket.opened_for or '(not set)'}",
         f"Short Description: {ticket.short_description}",
         "",
         "=== DESCRIPTION ===",
@@ -29,57 +30,104 @@ def _build_ticket_context(ticket: ServiceNowTicket) -> str:
     return "\n".join(parts)
 
 
-class DescriptionPrompt:
-    """Prompt for evaluating description quality (20 pts)."""
+class FieldCorrectnessPrompt:
+    """Prompt for evaluating field correctness (criteria 1-4, 25pts total)."""
 
-    CRITERION_ID = "accurate_description"
-    MAX_SCORE = 20
+    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer for onsite support tickets. Your task is to evaluate whether the Category, Subcategory, Service, and Configuration Item fields are correctly set for the given incident.
 
-    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer. Your task is to evaluate the quality of incident descriptions in ServiceNow tickets.
+SCORING RUBRIC:
 
-SCORING RUBRIC (20 points maximum):
-- 20 points: Description clearly states the issue and documents ALL required items
-- 15 points: 1 item incorrect/inaccurate/missing
-- 10 points: 2 items incorrect/inaccurate/missing
-- 5 points: 3 items incorrect/inaccurate/missing
-- 0 points: 4+ items incorrect/inaccurate/missing
+1. CATEGORY (5 points):
+   - 5 points: Category correctly matches the type of issue (e.g., Software, Hardware, Network, Inquiry/Help)
+   - 0 points: Category does not match the incident
 
-REQUIRED ITEMS TO CHECK:
-1. Contact information and working location (office/working remotely)
-2. All information relevant to the issue (error messages, screenshots mentioned, approvals, file paths, mailboxes, etc.)
-3. Usernames documented where issues relate to account access
-4. Domain\\Username documented for Active Directory/Domain password resets
-5. Clear statement of what the issue/request is
+2. SUBCATEGORY (5 points):
+   - 5 points: Subcategory correctly narrows the category (e.g., Operating System, Email, Printing)
+   - 0 points: Subcategory does not match or is too generic
+
+3. SERVICE (5 points):
+   - 5 points: Correct business service selected for the incident
+   - 2 points: Service is related but a better/more specific service was available
+   - 0 points: Incorrect service selected or no service set
+
+4. CONFIGURATION ITEM (10 points):
+   - 10 points: Correct CI (device, application, system) identified
+   - 5 points: CI is related but a more specific/appropriate CI was available
+   - 0 points: Incorrect CI selected or no CI set
 
 EVALUATION GUIDELINES:
-- The description should be in the incident description field
-- Look for validation documentation (OKTA, employee ID, name verification)
-- Check if the issue is clearly and concisely stated
-- Verify relevant technical details are included
+- Assess based on the incident description and context
+- Consider what the actual issue is about when evaluating field selections
+- Service and CI should be specific to the affected system/application
+- If no Service or CI is set, score 0 for that criterion
 
 Respond with a JSON object containing your evaluation."""
 
     @classmethod
     def build_messages(cls, ticket: ServiceNowTicket) -> list[dict[str, str]]:
-        """Build messages for description evaluation."""
-        user_content = f"""Evaluate the description quality for this ticket:
+        user_content = f"""Evaluate the field correctness for this ticket:
 
 {_build_ticket_context(ticket)}
 
 Respond with this exact JSON structure:
 {{
-    "criterion_id": "accurate_description",
-    "score": <0-20>,
+    "category_score": <5 or 0>,
+    "category_reasoning": "explanation",
+    "subcategory_score": <5 or 0>,
+    "subcategory_reasoning": "explanation",
+    "service_score": <5, 2, or 0>,
+    "service_reasoning": "explanation",
+    "ci_score": <10, 5, or 0>,
+    "ci_reasoning": "explanation",
+    "evidence": ["evidence1", "evidence2"],
+    "coaching": "overall coaching recommendation"
+}}"""
+        return [
+            {"role": "system", "content": cls.SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ]
+
+
+class IncidentNotesPrompt:
+    """Prompt for evaluating incident notes quality (20 pts)."""
+
+    CRITERION_ID = "incident_notes"
+    MAX_SCORE = 20
+
+    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer for onsite support tickets. Your task is to evaluate the quality of incident documentation (description, work notes).
+
+SCORING RUBRIC (20 points):
+- 20 points (Meets Standards): All relevant information documented clearly in appropriate fields. Includes: contact information, working location, issue details, troubleshooting steps, error messages, affected systems.
+- 10 points (Partially Meets Standards): Some information documented but with gaps, OR information is in the wrong fields (e.g., troubleshooting steps in description instead of work notes).
+- 0 points (Does Not Meet Standards): No meaningful notes, or very limited documentation that doesn't describe the issue or actions taken.
+- 20 points (N/A): Quick fix where all relevant information is captured in the resolution notes (e.g., simple password reset with proper documentation in close notes).
+
+EVALUATION GUIDELINES:
+- Check description for: contact info, working location, clear issue statement, relevant details
+- Check work notes for: troubleshooting steps, actions taken, outcomes
+- Information should be in the appropriate field (description for initial info, work notes for ongoing work)
+- For simple requests (password reset, account unlock), N/A is appropriate if resolution notes cover it
+
+Respond with a JSON object containing your evaluation."""
+
+    @classmethod
+    def build_messages(cls, ticket: ServiceNowTicket) -> list[dict[str, str]]:
+        user_content = f"""Evaluate the incident notes quality for this ticket:
+
+{_build_ticket_context(ticket)}
+
+Respond with this exact JSON structure:
+{{
+    "criterion_id": "incident_notes",
+    "score": <0, 10, or 20>,
     "max_score": 20,
-    "completeness_score": <0-10>,
-    "clarity_score": <0-10>,
-    "issue_stated": <true/false>,
-    "context_provided": <true/false>,
-    "user_impact_noted": <true/false>,
+    "location_documented": <true/false>,
+    "contact_info_present": <true/false>,
+    "relevant_details_present": <true/false>,
+    "troubleshooting_documented": <true/false>,
+    "appropriate_field_usage": <true/false>,
     "evidence": ["quote1", "quote2"],
     "reasoning": "explanation of score",
-    "strengths": ["strength1", "strength2"],
-    "improvements": ["improvement1", "improvement2"],
     "coaching": "specific coaching recommendation"
 }}"""
         return [
@@ -88,95 +136,76 @@ Respond with this exact JSON structure:
         ]
 
 
-class TroubleshootingPrompt:
-    """Prompt for evaluating troubleshooting quality (20 pts)."""
+class IncidentHandlingPrompt:
+    """Prompt for evaluating incident handling (15 pts)."""
 
-    CRITERION_ID = "troubleshooting_quality"
-    MAX_SCORE = 20
+    CRITERION_ID = "incident_handling"
+    MAX_SCORE = 15
 
-    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer. Your task is to evaluate the quality of troubleshooting documentation in ServiceNow tickets.
+    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer for onsite support tickets. Your task is to evaluate whether the incident was handled correctly.
 
-SCORING RUBRIC (20 points maximum):
-- 20 points: Sufficient troubleshooting conducted AND documented clearly
-- 15 points: Sufficient troubleshooting conducted but not sufficiently documented
-- 10 points: Some troubleshooting conducted and documented
-- 5 points: Limited low-level troubleshooting conducted
-- 0 points: No troubleshooting conducted or no documentation of troubleshooting
-- N/A: No troubleshooting was required (simple requests like password resets)
+SCORING RUBRIC (15 points):
+- 15 points (Correct Handling): Incident was resolved appropriately at the service desk level, OR routed to the correct resolver group when escalation was needed.
+- 0 points (Incorrect Handling): First Contact Resolution (FCR) opportunity was missed (could have been resolved but was escalated), OR routed to the wrong team, OR resolved prematurely without proper confirmation.
+- 15 points (N/A): Handling assessment is not applicable for this ticket type.
 
 EVALUATION GUIDELINES:
-- Troubleshooting steps should be clearly documented in description, work notes, or close notes
-- Steps should be relevant to the reported issue
-- Steps should follow a logical progression
-- Outcomes of each step should be documented where applicable
-- Look for actions like: restart, reset, clear cache, check settings, verify access, etc.
-
-For simple requests (password reset, account unlock), if documented properly, award full points or N/A.
+- Consider whether the analyst exhausted appropriate troubleshooting before escalating
+- Check if the routing group matches the type of issue
+- Look for signs of premature resolution (closing without confirmation)
+- Simple issues (password reset, account unlock) should be resolved at first contact
+- Complex issues (hardware failure, network infrastructure) may legitimately need escalation
 
 Respond with a JSON object containing your evaluation."""
 
     @classmethod
     def build_messages(cls, ticket: ServiceNowTicket) -> list[dict[str, str]]:
-        """Build messages for troubleshooting evaluation."""
-        user_content = f"""Evaluate the troubleshooting quality for this ticket:
+        user_content = f"""Evaluate the incident handling for this ticket:
 
 {_build_ticket_context(ticket)}
 
 Respond with this exact JSON structure:
 {{
-    "criterion_id": "troubleshooting_quality",
-    "score": <0-20 or "N/A">,
-    "max_score": 20,
-    "steps_documented": <true/false>,
-    "logical_progression": <true/false>,
-    "appropriate_actions": <true/false>,
-    "outcome_documented": <true/false>,
-    "steps_count": <number>,
+    "criterion_id": "incident_handling",
+    "score": <0 or 15>,
+    "max_score": 15,
+    "routed_correctly": <true/false>,
+    "resolved_appropriately": <true/false>,
+    "fcr_opportunity_missed": <true/false>,
     "evidence": ["quote1", "quote2"],
     "reasoning": "explanation of score",
-    "strengths": ["strength1", "strength2"],
-    "improvements": ["improvement1", "improvement2"],
     "coaching": "specific coaching recommendation"
-}}
-
-If no troubleshooting was required, use "N/A" for score."""
+}}"""
         return [
             {"role": "system", "content": cls.SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ]
 
 
-class ResolutionPrompt:
-    """Prompt for evaluating resolution notes quality (15 pts)."""
+class ResolutionNotesPrompt:
+    """Prompt for evaluating resolution notes quality (20 pts)."""
 
     CRITERION_ID = "resolution_notes"
-    MAX_SCORE = 15
+    MAX_SCORE = 20
 
-    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer. Your task is to evaluate the quality of resolution notes in ServiceNow tickets.
+    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer for onsite support tickets. Your task is to evaluate the quality of resolution notes (close notes).
 
-SCORING RUBRIC (15 points maximum):
-- 15 points: Resolution notes include ALL THREE required elements
-- 10 points: Missing ONE of the required elements
-- 5 points: Missing TWO of the required elements
-- 0 points: No clear information on resolution OR missing confirmation
-- N/A: Ticket not resolved or was routed to another team
-
-REQUIRED ELEMENTS:
-1. Summary of what was done to resolve the issue
-2. Confirmation that the issue is resolved
-3. Confirmation that the colleague agreed the incident can be closed
+SCORING RUBRIC (20 points):
+- 20 points (Meets Standards): Resolution notes include BOTH: (1) Summary of what was done to resolve the issue, AND (2) Confirmation that the colleague confirmed the issue is resolved.
+- 10 points (Partially Meets Standards): Missing EITHER the resolution summary OR the user confirmation (but has one of them).
+- 0 points (Does Not Meet Standards): Missing BOTH resolution summary AND user confirmation, or close notes are empty/meaningless.
+- 20 points (N/A): Ticket is still Work In Progress (WIP), was routed to a different team for resolution, or was resolved via automated tool (e.g., AskLen).
 
 EVALUATION GUIDELINES:
-- Check close_notes and work_notes for resolution documentation
-- Look for explicit user confirmation (e.g., "user confirmed", "colleague verified", "working now")
-- Resolution steps should be clear enough to reproduce if issue recurs
-- Look for closure agreement phrases like "agreed to close", "confirmed to close"
+- Check close_notes for a clear summary of the resolution steps
+- Look for explicit user confirmation phrases: "user confirmed", "colleague verified", "working now", "agreed to close"
+- WIP tickets or tickets routed to other teams should get N/A (20 points)
+- Resolution notes should be clear enough to reproduce the fix if the issue recurs
 
 Respond with a JSON object containing your evaluation."""
 
     @classmethod
     def build_messages(cls, ticket: ServiceNowTicket) -> list[dict[str, str]]:
-        """Build messages for resolution evaluation."""
         user_content = f"""Evaluate the resolution notes quality for this ticket:
 
 {_build_ticket_context(ticket)}
@@ -184,149 +213,16 @@ Respond with a JSON object containing your evaluation."""
 Respond with this exact JSON structure:
 {{
     "criterion_id": "resolution_notes",
-    "score": <0-15 or "N/A">,
-    "max_score": 15,
-    "outcome_clear": <true/false>,
-    "steps_documented": <true/false>,
-    "confirmation_obtained": <true/false>,
-    "resolution_complete": <true/false>,
-    "evidence": ["quote1", "quote2"],
-    "reasoning": "explanation of score",
-    "strengths": ["strength1", "strength2"],
-    "improvements": ["improvement1", "improvement2"],
-    "coaching": "specific coaching recommendation"
-}}
-
-If ticket was routed and not resolved, use "N/A" for score."""
-        return [
-            {"role": "system", "content": cls.SYSTEM_PROMPT},
-            {"role": "user", "content": user_content},
-        ]
-
-
-class CustomerServicePrompt:
-    """Prompt for evaluating customer service quality (20 pts)."""
-
-    CRITERION_ID = "customer_service_quality"
-    MAX_SCORE = 20
-
-    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer. Your task is to evaluate the customer service quality demonstrated in ServiceNow tickets.
-
-SCORING RUBRIC (20 points maximum):
-- 20 points: HIGH level - Friendly, polite, understands issue, responds appropriately, assists quickly and effectively, shows eagerness to help
-- 15 points: GOOD level - Polite, friendly, understands issue, responds appropriately but not particularly quickly
-- 10 points: ADEQUATE level - Understands issue, troubleshoots effectively, but doesn't communicate enough with colleague
-- 5 points: POOR level - Not particularly friendly/helpful, may not understand issue, doesn't help effectively
-- 0 points: UNACCEPTABLE - Unprofessional, rude, unhelpful, does not assist with issue
-
-EVALUATION GUIDELINES:
-- Look for professional and friendly tone in all communications
-- Check for empathy towards the colleague's situation
-- Verify clear communication of what is being done and why
-- Look for appropriate greeting and closing messages
-- Check for proper expectation setting (e.g., "this may take a few minutes")
-- Look for offer of workarounds when immediate resolution isn't possible
-
-Note: For phone tickets, evaluate based on documented interactions. For chat tickets, more direct communication is expected.
-
-Respond with a JSON object containing your evaluation."""
-
-    @classmethod
-    def build_messages(cls, ticket: ServiceNowTicket) -> list[dict[str, str]]:
-        """Build messages for customer service evaluation."""
-        user_content = f"""Evaluate the customer service quality for this ticket:
-
-{_build_ticket_context(ticket)}
-
-Respond with this exact JSON structure:
-{{
-    "criterion_id": "customer_service_quality",
-    "score": <0-20>,
+    "score": <0, 10, or 20>,
     "max_score": 20,
-    "professional_tone": <true/false>,
-    "empathy_shown": <true/false>,
-    "clear_communication": <true/false>,
-    "proper_greeting": <true/false>,
-    "proper_closing": <true/false>,
-    "expectations_set": <true/false>,
+    "summary_present": <true/false>,
+    "confirmation_present": <true/false>,
+    "is_wip_or_routed": <true/false>,
     "evidence": ["quote1", "quote2"],
     "reasoning": "explanation of score",
-    "strengths": ["strength1", "strength2"],
-    "improvements": ["improvement1", "improvement2"],
     "coaching": "specific coaching recommendation"
 }}"""
         return [
             {"role": "system", "content": cls.SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ]
-
-
-class SpellingGrammarPrompt:
-    """Prompt for evaluating spelling and grammar (2 pts)."""
-
-    CRITERION_ID = "spelling_grammar"
-    MAX_SCORE = 2
-
-    SYSTEM_PROMPT = """You are an expert IT service desk quality reviewer. Your task is to evaluate spelling, grammar, and punctuation in ServiceNow tickets.
-
-SCORING RUBRIC (2 points maximum):
-- 2 points: Perfect or near-perfect spelling, grammar, and punctuation
-- 1 point: 1-4 spelling, grammar, or punctuation mistakes
-- 0 points: 5 or more mistakes
-
-EVALUATION GUIDELINES:
-- Focus on the description, work notes, and close notes fields
-- Common acceptable abbreviations in IT context: VDI, LAN, MFA, OKTA, AD, etc.
-- Technical terms and application names are not spelling errors
-- Consider readability and professionalism
-- Minor typos count as errors
-- Ignore formatting issues (line breaks, bullets, etc.)
-
-Respond with a JSON object containing your evaluation."""
-
-    @classmethod
-    def build_messages(cls, ticket: ServiceNowTicket) -> list[dict[str, str]]:
-        """Build messages for spelling/grammar evaluation."""
-        user_content = f"""Evaluate the spelling and grammar for this ticket:
-
-{_build_ticket_context(ticket)}
-
-Respond with this exact JSON structure:
-{{
-    "criterion_id": "spelling_grammar",
-    "score": <0-2>,
-    "max_score": 2,
-    "error_count": <number>,
-    "errors_found": ["error1", "error2"],
-    "severity": "<none|minor|moderate|significant>",
-    "evidence": [],
-    "reasoning": "explanation of score",
-    "strengths": ["strength1"],
-    "improvements": ["improvement1"],
-    "coaching": "specific coaching recommendation"
-}}"""
-        return [
-            {"role": "system", "content": cls.SYSTEM_PROMPT},
-            {"role": "user", "content": user_content},
-        ]
-
-
-class PromptTemplates:
-    """Collection of all prompt templates."""
-
-    def __init__(self) -> None:
-        self.description = DescriptionPrompt()
-        self.troubleshooting = TroubleshootingPrompt()
-        self.resolution = ResolutionPrompt()
-        self.customer_service = CustomerServicePrompt()
-        self.spelling_grammar = SpellingGrammarPrompt()
-
-    def get_all_prompts(self) -> dict[str, Any]:
-        """Get all prompt templates."""
-        return {
-            "description": self.description,
-            "troubleshooting": self.troubleshooting,
-            "resolution": self.resolution,
-            "customer_service": self.customer_service,
-            "spelling_grammar": self.spelling_grammar,
-        }
