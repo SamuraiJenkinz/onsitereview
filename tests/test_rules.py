@@ -1,12 +1,12 @@
-"""Tests for TQRS rules engine."""
+"""Tests for onsitereview rules engine."""
 
 from datetime import datetime
 
 import pytest
 
-from tqrs.models.ticket import ServiceNowTicket
-from tqrs.rules.evaluator import RulesEvaluator
-from tqrs.rules.opened_for import OpenedForValidator
+from onsitereview.models.ticket import ServiceNowTicket
+from onsitereview.rules.evaluator import RulesEvaluator
+from onsitereview.rules.opened_for import OpenedForValidator
 
 
 def _make_ticket(**overrides) -> ServiceNowTicket:

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tqrs"
+name = "onsitereview"
 version = "0.1.0"
 description = "AI-powered ServiceNow ticket quality review system"
 readme = "README.md"
@@ -39,7 +39,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/tqrs"]
+packages = ["src/onsitereview"]
 
 [tool.ruff]
 target-version = "py312"
@@ -61,7 +61,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["tqrs"]
+known-first-party = ["onsitereview"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

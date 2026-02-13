@@ -6,15 +6,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tqrs.models.evaluation import (
+from onsitereview.models.evaluation import (
     CriterionScore,
     EvaluationResult,
     PerformanceBand,
     TemplateType,
 )
-from tqrs.models.ticket import ServiceNowTicket
-from tqrs.rules.base import RuleResult
-from tqrs.scoring import (
+from onsitereview.models.ticket import ServiceNowTicket
+from onsitereview.rules.base import RuleResult
+from onsitereview.scoring import (
     ONSITE_REVIEW_CRITERIA,
     BatchProgress,
     BatchTicketEvaluator,
@@ -26,7 +26,7 @@ from tqrs.scoring import (
     get_criterion_by_id,
     get_max_score,
 )
-from tqrs.scoring.templates import TemplateCriterion
+from onsitereview.scoring.templates import TemplateCriterion
 
 
 # ============================================================================

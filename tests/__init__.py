@@ -1,1 +1,1 @@
-"""TQRS test suite."""
+"""onsitereview test suite."""

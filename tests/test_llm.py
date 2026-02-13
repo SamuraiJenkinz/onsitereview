@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tqrs.llm import (
+from onsitereview.llm import (
     BatchLLMEvaluator,
     BatchProgress,
     LLMAPIError,
@@ -15,19 +15,19 @@ from tqrs.llm import (
     OpenAIClient,
     TokenUsage,
 )
-from tqrs.llm.prompts import (
+from onsitereview.llm.prompts import (
     FieldCorrectnessPrompt,
     IncidentHandlingPrompt,
     IncidentNotesPrompt,
     ResolutionNotesPrompt,
 )
-from tqrs.llm.schemas import (
+from onsitereview.llm.schemas import (
     FieldCorrectnessEvaluation,
     IncidentHandlingEvaluation,
     IncidentNotesEvaluation,
     ResolutionNotesEvaluation,
 )
-from tqrs.models.ticket import ServiceNowTicket
+from onsitereview.models.ticket import ServiceNowTicket
 
 
 # ============================================================================
@@ -227,7 +227,7 @@ class TestOpenAIClient:
         assert client.config.temperature == 0.2
         assert client.config.max_retries == 5
 
-    @patch("tqrs.llm.client.OpenAI")
+    @patch("onsitereview.llm.client.OpenAI")
     def test_complete_success(self, mock_openai_class):
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
@@ -247,7 +247,7 @@ class TestOpenAIClient:
         assert result == {"result": "success"}
         assert client.token_usage.total_tokens == 150
 
-    @patch("tqrs.llm.client.OpenAI")
+    @patch("onsitereview.llm.client.OpenAI")
     def test_complete_invalid_json(self, mock_openai_class):
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
@@ -263,7 +263,7 @@ class TestOpenAIClient:
         with pytest.raises(LLMValidationError):
             client.complete([{"role": "user", "content": "test"}])
 
-    @patch("tqrs.llm.client.OpenAI")
+    @patch("onsitereview.llm.client.OpenAI")
     def test_complete_empty_response(self, mock_openai_class):
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
@@ -587,7 +587,7 @@ class TestBatchLLMEvaluator:
 class TestIntegration:
     """Integration-style tests with full mock chain."""
 
-    @patch("tqrs.llm.client.OpenAI")
+    @patch("onsitereview.llm.client.OpenAI")
     def test_full_evaluation_flow(
         self,
         mock_openai_class,

@@ -1,11 +1,11 @@
-"""Pytest fixtures for TQRS tests."""
+"""Pytest fixtures for onsitereview tests."""
 
 from pathlib import Path
 
 import pytest
 
-from tqrs.models import ServiceNowTicket
-from tqrs.parser import ServiceNowParser
+from onsitereview.models import ServiceNowTicket
+from onsitereview.parser import ServiceNowParser
 
 
 @pytest.fixture

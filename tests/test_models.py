@@ -1,11 +1,11 @@
-"""Tests for TQRS data models."""
+"""Tests for onsitereview data models."""
 
 from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
 
-from tqrs.models import (
+from onsitereview.models import (
     AnalystReview,
     BatchEvaluationSummary,
     CriterionScore,

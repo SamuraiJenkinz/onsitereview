@@ -31,7 +31,7 @@ pip install -e .
 ### 2. Run the Application
 
 ```powershell
-streamlit run src/tqrs/ui/app.py
+streamlit run src/onsitereview/ui/app.py
 ```
 
 ### 3. Use the Web Interface
@@ -57,7 +57,7 @@ cd onsitereview
 python -m venv venv
 venv\Scripts\activate
 pip install -e .
-streamlit run src/tqrs/ui/app.py
+streamlit run src/onsitereview/ui/app.py
 ```
 
 ### Windows Server Deployment
@@ -218,7 +218,7 @@ From the Export tab:
 ## Project Structure
 
 ```
-src/tqrs/
+src/onsitereview/
 ├── models/          # Pydantic data models
 ├── parser/          # ServiceNow JSON parser
 ├── rules/           # Deterministic rule evaluators (Opened For check)
