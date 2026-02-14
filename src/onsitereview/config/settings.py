@@ -29,22 +29,22 @@ class Settings(BaseSettings):
     openai_max_retries: int = 3
 
     # Azure OpenAI Configuration (server-side credentials)
-    # Uses onsitereview_ prefix to avoid collisions with other apps
+    # Uses TQRS_ prefix to match configure_credentials.ps1
     azure_openai_endpoint: str | None = Field(
         default=None,
-        validation_alias="onsitereview_AZURE_OPENAI_ENDPOINT",
+        validation_alias="TQRS_AZURE_OPENAI_ENDPOINT",
     )
     azure_openai_api_key: str | None = Field(
         default=None,
-        validation_alias="onsitereview_AZURE_OPENAI_API_KEY",
+        validation_alias="TQRS_AZURE_OPENAI_API_KEY",
     )
     azure_openai_deployment: str | None = Field(
         default=None,
-        validation_alias="onsitereview_AZURE_OPENAI_DEPLOYMENT",
+        validation_alias="TQRS_AZURE_OPENAI_DEPLOYMENT",
     )
     azure_openai_api_version: str = Field(
         default="2024-02-15-preview",
-        validation_alias="onsitereview_AZURE_OPENAI_API_VERSION",
+        validation_alias="TQRS_AZURE_OPENAI_API_VERSION",
     )
 
     # Processing Configuration
@@ -69,9 +69,9 @@ class Settings(BaseSettings):
         """Check if Azure OpenAI credentials are configured via environment variables.
 
         Returns True only if all required Azure settings are present:
-        - onsitereview_AZURE_OPENAI_ENDPOINT
-        - onsitereview_AZURE_OPENAI_API_KEY
-        - onsitereview_AZURE_OPENAI_DEPLOYMENT
+        - TQRS_AZURE_OPENAI_ENDPOINT
+        - TQRS_AZURE_OPENAI_API_KEY
+        - TQRS_AZURE_OPENAI_DEPLOYMENT
         """
         return bool(
             self.azure_openai_endpoint

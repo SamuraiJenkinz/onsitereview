@@ -1,14 +1,14 @@
-# TQRS (Incident Reviews) - Scheduled Task Setup Script
+# Onsite Review - Scheduled Task Setup Script
 # Run as Administrator on Windows Server
 
 param(
-    [string]$AppPath = "D:\incidentreviews",
+    [string]$AppPath = "D:\onsitereview",
     [string]$Port = "8502",
     [string]$TaskName = "TQRS"
 )
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "TQRS - Incident Reviews Service Setup" -ForegroundColor Cyan
+Write-Host "Onsite Review - Service Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -20,9 +20,9 @@ if (-not $isAdmin) {
 }
 
 # Verify app path exists
-if (-not (Test-Path "$AppPath\src\tqrs\ui\app.py")) {
-    Write-Host "ERROR: app.py not found at $AppPath\src\tqrs\ui\" -ForegroundColor Red
-    Write-Host "Clone the repo first: git clone https://github.com/mmctech/IncidentReviews.git" -ForegroundColor Yellow
+if (-not (Test-Path "$AppPath\src\onsitereview\ui\app.py")) {
+    Write-Host "ERROR: app.py not found at $AppPath\src\onsitereview\ui\" -ForegroundColor Red
+    Write-Host "Clone the repo first: git clone https://github.com/SamuraiJenkinz/onsitereview.git" -ForegroundColor Yellow
     exit 1
 }
 
@@ -63,7 +63,7 @@ $batchScript = @"
 @echo off
 cd /d $AppPath
 call venv\Scripts\activate.bat
-streamlit run src\tqrs\ui\app.py --server.address 0.0.0.0 --server.port $Port --server.headless true
+streamlit run src\onsitereview\ui\app.py --server.address 0.0.0.0 --server.port $Port --server.headless true
 "@
 
 $batchPath = "$AppPath\start_server.bat"
@@ -98,7 +98,7 @@ Register-ScheduledTask `
     -Trigger $trigger `
     -Principal $principal `
     -Settings $settings `
-    -Description "TQRS - Ticket Quality Review System" | Out-Null
+    -Description "Onsite Review - Ticket Quality Review System" | Out-Null
 
 Write-Host "Scheduled task created: $TaskName" -ForegroundColor Green
 

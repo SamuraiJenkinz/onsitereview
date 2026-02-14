@@ -58,7 +58,7 @@ def init_state() -> None:
     """Initialize session state with defaults.
 
     If Azure OpenAI credentials are configured via environment variables
-    (onsitereview_AZURE_OPENAI_*), the state is pre-populated with those values
+    (TQRS_AZURE_OPENAI_*), the state is pre-populated with those values
     and server_credentials_configured is set to True.
     """
     if _INITIALIZED_KEY not in st.session_state:
