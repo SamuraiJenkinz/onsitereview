@@ -24,6 +24,9 @@ def _build_ticket_context(ticket: ServiceNowTicket) -> str:
         "=== WORK NOTES ===",
         ticket.work_notes or "(empty)",
         "",
+        "=== COMMENTS ===",
+        ticket.comments or "(empty)",
+        "",
         "=== CLOSE NOTES ===",
         ticket.close_notes or "(empty)",
     ]

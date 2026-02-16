@@ -189,6 +189,7 @@ class PDFParser:
             # People
             caller_id=fields.get("opened_for", "unknown"),
             opened_by=fields.get("opened_for", "unknown"),
+            opened_for=fields.get("opened_for", ""),
             assigned_to=fields.get("assigned_to", ""),
             resolved_by=fields.get("assigned_to", ""),
             # Classification
@@ -202,6 +203,7 @@ class PDFParser:
             short_description=fields.get("short_description", ""),
             description=fields.get("description", ""),
             work_notes=fields.get("work_notes", ""),
+            comments=fields.get("additional_comments", ""),
             close_notes=fields.get("close_notes", ""),
             close_code=fields.get("close_code", ""),
             # Status

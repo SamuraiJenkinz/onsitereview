@@ -37,6 +37,7 @@ class ServiceNowTicket(BaseModel):
     short_description: str = Field(..., description="Brief issue summary")
     description: str = Field(..., description="Full issue description")
     work_notes: str = Field("", description="Internal work notes")
+    comments: str = Field("", description="Customer-facing comments/additional comments")
     close_notes: str = Field("", description="Resolution notes")
     close_code: str = Field("", description="Closure reason code")
 
@@ -66,7 +67,7 @@ class ServiceNowTicket(BaseModel):
     line_of_business: str | None = Field(None, description="Determined LoB")
     resolution_time_minutes: int | None = Field(None, description="Time to resolution")
 
-    @field_validator("work_notes", "close_notes", "close_code", mode="before")
+    @field_validator("work_notes", "comments", "close_notes", "close_code", mode="before")
     @classmethod
     def empty_string_to_default(cls, v: str | None) -> str:
         """Convert None to empty string for optional text fields."""

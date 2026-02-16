@@ -120,6 +120,7 @@ class ServiceNowParser:
             short_description=raw.get("short_description", ""),
             description=raw.get("description", ""),
             work_notes=raw.get("work_notes", ""),
+            comments=raw.get("comments", ""),
             close_notes=raw.get("close_notes", ""),
             close_code=raw.get("close_code", ""),
             # Status
